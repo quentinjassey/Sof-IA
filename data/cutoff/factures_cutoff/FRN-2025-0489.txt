@@ -1,0 +1,46 @@
+========================================================================
+                    BLANC COMPOSANTS SA
+            5, rue des Artisans — 69100 VILLEURBANNE
+           SIRET : 567 890 123 00056 — TVA : FR 56 567890123
+========================================================================
+
+                    FACTURE FOURNISSEUR
+
+Facture n° :        FRN-2025-0489
+Date :              02/01/2026
+Bon de réception :  BR-2025-0345
+
+------------------------------------------------------------------------
+À L'ATTENTION DE
+------------------------------------------------------------------------
+ACME Distribution SAS
+12, rue de l'Industrie
+69003 LYON
+N° client fournisseur : ACME-BC-012
+
+------------------------------------------------------------------------
+DÉSIGNATION                        QTÉ    P.U. HT       TOTAL HT
+------------------------------------------------------------------------
+Pièces détachées électroniques
+  — Commande urgente ACME-PDE-99     200     30,00 EUR    6 000,00 EUR
+Connecteurs spéciaux type C
+  — Réf. CS-BLC-44                    50     36,00 EUR    1 800,00 EUR
+------------------------------------------------------------------------
+                            TOTAL HT                     7 800,00 EUR
+                            TVA 20%                      1 560,00 EUR
+                            ----------------------------------------
+                            TOTAL TTC                    9 360,00 EUR
+------------------------------------------------------------------------
+
+Conditions de paiement : 30 jours net
+Date d'échéance :        01/02/2026
+Mode de règlement :      Virement bancaire
+
+Référence commande ACME : PO-2025-0912
+Note : Commande passée le 23/12/2025, marchandise livrée le 28/12/2025.
+       Facturation émise après retour de congés le 02/01/2026.
+
+------------------------------------------------------------------------
+Blanc Composants SA — Capital social : 200 000 EUR
+RCS Lyon B 567 890 123
+========================================================================

@@ -1,0 +1,28 @@
+JournalCode	JournalLib	EcritureNum	EcritureDate	CompteNum	CompteLib	CompAuxNum	CompAuxLib	PieceRef	PieceDate	EcritureLib	Debit	Credit	EcrtureLet	DateLet	ValidDate	Montantdevise	Idevise
+VE	Ventes	VE-2025-1201	20251218	411010	Clients - SA Fontaine Logistique	CLI010	SA Fontaine Logistique	FAC-2025-1180	20251218	Vente équipements Fontaine - Cde FL-890	36000,00	0,00			20251231
+VE	Ventes	VE-2025-1201	20251218	701000	Ventes de produits finis			FAC-2025-1180	20251218	Vente équipements Fontaine - Cde FL-890	0,00	30000,00			20251231
+VE	Ventes	VE-2025-1201	20251218	445710	TVA collectée 20%			FAC-2025-1180	20251218	Vente équipements Fontaine - Cde FL-890	0,00	6000,00			20251231
+VE	Ventes	VE-2025-1202	20251222	411011	Clients - SARL Mercier & Cie	CLI011	SARL Mercier & Cie	FAC-2025-1181	20251222	Vente matériel Mercier - Commande MC-445	14400,00	0,00			20251231
+VE	Ventes	VE-2025-1202	20251222	707000	Ventes de marchandises			FAC-2025-1181	20251222	Vente matériel Mercier - Commande MC-445	0,00	12000,00			20251231
+VE	Ventes	VE-2025-1202	20251222	445710	TVA collectée 20%			FAC-2025-1181	20251222	Vente matériel Mercier - Commande MC-445	0,00	2400,00			20251231
+VE	Ventes	VE-2025-1203	20251229	411012	Clients - Ets Lambert Industrie	CLI012	Ets Lambert Industrie	FAC-2025-1182	20251229	Vente produits Lambert - Lot LI-2025-78	52800,00	0,00			20251231
+VE	Ventes	VE-2025-1203	20251229	701000	Ventes de produits finis			FAC-2025-1182	20251229	Vente produits Lambert - Lot LI-2025-78	0,00	44000,00			20251231
+VE	Ventes	VE-2025-1203	20251229	445710	TVA collectée 20%			FAC-2025-1182	20251229	Vente produits Lambert - Lot LI-2025-78	0,00	8800,00			20251231
+VE	Ventes	VE-2025-1204	20251230	411013	Clients - SAS Perrin Solutions	CLI013	SAS Perrin Solutions	FAC-2025-1183	20251230	Vente services Perrin - Contrat PS-2025	19200,00	0,00			20251231
+VE	Ventes	VE-2025-1204	20251230	701000	Ventes de produits finis			FAC-2025-1183	20251230	Vente services Perrin - Contrat PS-2025	0,00	16000,00			20251231
+VE	Ventes	VE-2025-1204	20251230	445710	TVA collectée 20%			FAC-2025-1183	20251230	Vente services Perrin - Contrat PS-2025	0,00	3200,00			20251231
+VE	Ventes	VE-2025-1205	20251231	411014	Clients - Groupe Tissot SA	CLI014	Groupe Tissot SA	FAC-2025-1184	20251231	Vente fin d'exercice Tissot - Réf. GT-DEC25	24000,00	0,00			20251231
+VE	Ventes	VE-2025-1205	20251231	701000	Ventes de produits finis			FAC-2025-1184	20251231	Vente fin d'exercice Tissot - Réf. GT-DEC25	0,00	20000,00			20251231
+VE	Ventes	VE-2025-1205	20251231	445710	TVA collectée 20%			FAC-2025-1184	20251231	Vente fin d'exercice Tissot - Réf. GT-DEC25	0,00	4000,00			20251231
+HA	Achats	HA-2025-0901	20251220	607000	Achats de marchandises			FRN-2025-0487	20251220	Achat marchandises Fournisseur Dupré	0,00	18500,00			20251231
+HA	Achats	HA-2025-0901	20251220	401001	Fournisseurs - Dupré Matériaux SAS	FRN001	Dupré Matériaux SAS	FRN-2025-0487	20251220	Achat marchandises Fournisseur Dupré	0,00	3700,00			20251231
+HA	Achats	HA-2025-0901	20251220	445660	TVA déductible sur ABS			FRN-2025-0487	20251220	Achat marchandises Fournisseur Dupré	22200,00	0,00			20251231
+HA	Achats	HA-2025-0902	20251228	607000	Achats de marchandises			FRN-2025-0488	20251228	Achat matières premières Fournisseur Garnier	0,00	9200,00			20251231
+HA	Achats	HA-2025-0902	20251228	401002	Fournisseurs - Garnier Industries SARL	FRN002	Garnier Industries SARL	FRN-2025-0488	20251228	Achat matières premières Fournisseur Garnier	0,00	1840,00			20251231
+HA	Achats	HA-2025-0902	20251228	445660	TVA déductible sur ABS			FRN-2025-0488	20251228	Achat matières premières Fournisseur Garnier	11040,00	0,00			20251231
+HA	Achats	HA-2025-0903	20260102	607000	Achats de marchandises			FRN-2025-0489	20260102	Achat pièces détachées Fournisseur Blanc — réception 28/12	0,00	7800,00			20260115
+HA	Achats	HA-2025-0903	20260102	401003	Fournisseurs - Blanc Composants SA	FRN003	Blanc Composants SA	FRN-2025-0489	20260102	Achat pièces détachées Fournisseur Blanc — réception 28/12	0,00	1560,00			20260115
+HA	Achats	HA-2025-0903	20260102	445660	TVA déductible sur ABS			FRN-2025-0489	20260102	Achat pièces détachées Fournisseur Blanc — réception 28/12	9360,00	0,00			20260115
+VE	Ventes	VE-2026-0001	20260110	411011	Clients - SARL Mercier & Cie	CLI011	SARL Mercier & Cie	AV-2026-0001	20260110	Avoir sur vente Mercier du 22/12 - retour partiel	0,00	7200,00			20260115
+VE	Ventes	VE-2026-0001	20260110	707000	Ventes de marchandises			AV-2026-0001	20260110	Avoir sur vente Mercier du 22/12 - retour partiel	6000,00	0,00			20260115
+VE	Ventes	VE-2026-0001	20260110	445710	TVA collectée 20%			AV-2026-0001	20260110	Avoir sur vente Mercier du 22/12 - retour partiel	1200,00	0,00			20260115

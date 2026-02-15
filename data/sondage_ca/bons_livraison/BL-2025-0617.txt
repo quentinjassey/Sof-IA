@@ -1,0 +1,58 @@
+========================================================================
+                        ACME DISTRIBUTION SAS
+              12, rue de l'Industrie — 69003 LYON
+========================================================================
+
+                      BON DE LIVRAISON
+
+N° BL :             BL-2025-0617
+Date d'expédition : 03/01/2026
+Date de livraison : 06/01/2026
+Réf. commande :     Cde CLI009-EXP-2025-44
+Facture associée :  FAC-2025-0855
+
+------------------------------------------------------------------------
+DESTINATAIRE
+------------------------------------------------------------------------
+Groupe Roux International
+Tour Part-Dieu, 129 rue Servient
+69003 LYON
+Contact : M. François Roux
+Tél. : 04 72 67 89 01
+
+------------------------------------------------------------------------
+DÉSIGNATION DES MARCHANDISES LIVRÉES
+------------------------------------------------------------------------
+Produits export — Lot EXP-2025-44
+  Marchandises à l'exportation
+  Quantité : 10 unités
+  État : Neuf, sous emballage export normes internationales
+
+Emballage export aux normes internationales
+  10 colis conformes aux normes ISPM-15
+
+------------------------------------------------------------------------
+CONDITIONS DE LIVRAISON
+------------------------------------------------------------------------
+Transporteur :      Méditerranée Fret International
+N° de suivi :       MFI-2026-00089
+Livraison :         FOB Lyon
+Incoterm :          FOB
+
+Point de départ :   Entrepôt ACME, Vénissieux (69200)
+Date d'expédition : 03/01/2026
+
+------------------------------------------------------------------------
+RÉCEPTION
+------------------------------------------------------------------------
+Réceptionné par :   M. François Roux
+Date de réception : 06/01/2026
+Signature :         [Signé]
+
+Observations : Marchandise conforme. Documents douaniers à compléter
+               par le transitaire. Préparation commencée le 30/12/2025,
+               expédition effective le 03/01/2026.
+
+------------------------------------------------------------------------
+ACME Distribution SAS — Capital social : 250 000 EUR
+========================================================================

@@ -1,0 +1,50 @@
+========================================================================
+                        ACME DISTRIBUTION SAS
+              12, rue de l'Industrie — 69003 LYON
+           SIRET : 412 345 678 00012 — TVA : FR 12 412345678
+========================================================================
+
+                        FACTURE DE VENTE
+
+Facture n° :        FAC-2025-0851
+Date :              18/11/2025
+Bon de livraison :  (non référencé)
+
+------------------------------------------------------------------------
+CLIENT
+------------------------------------------------------------------------
+SAS Moreau Industries
+3, parc d'activités Techlid
+69130 ÉCULLY
+SIRET : 967 890 123 00067
+N° client : CLI005
+
+------------------------------------------------------------------------
+DÉSIGNATION                        QTÉ    P.U. HT       TOTAL HT
+------------------------------------------------------------------------
+Matériel technique spécialisé
+  — Projet MR-2025                    1  28 000,00 EUR   28 000,00 EUR
+Installation et paramétrage
+  sur site                            1   5 000,00 EUR    5 000,00 EUR
+Garantie étendue 24 mois             1   2 000,00 EUR    2 000,00 EUR
+------------------------------------------------------------------------
+                            TOTAL HT                    35 000,00 EUR
+                            TVA 20%                      7 000,00 EUR
+                            ----------------------------------------
+                            TOTAL TTC                   42 000,00 EUR
+------------------------------------------------------------------------
+
+Conditions de paiement : 30 jours fin de mois
+Date d'échéance :        31/12/2025
+Mode de règlement :      Virement bancaire
+
+IBAN : FR76 3000 4000 0500 0012 3456 789
+BIC :  BNPAFRPP
+
+Note : Livraison et installation prévues courant décembre 2025.
+Le bon de livraison sera émis à réception sur site.
+
+------------------------------------------------------------------------
+ACME Distribution SAS — Capital social : 250 000 EUR
+RCS Lyon B 412 345 678
+========================================================================

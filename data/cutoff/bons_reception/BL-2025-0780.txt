@@ -1,0 +1,43 @@
+========================================================================
+                        ACME DISTRIBUTION SAS
+              12, rue de l'Industrie — 69003 LYON
+========================================================================
+
+                      BON DE LIVRAISON
+
+N° BL :             BL-2025-0780
+Date d'expédition : 17/12/2025
+Date de livraison : 18/12/2025
+Réf. commande :     Cde CLI010-FL-890
+Facture associée :  FAC-2025-1180
+
+------------------------------------------------------------------------
+DESTINATAIRE
+------------------------------------------------------------------------
+SA Fontaine Logistique
+25, quai Rambaud
+69002 LYON
+Contact : M. Henri Fontaine
+Tél. : 04 78 90 12 34
+
+------------------------------------------------------------------------
+DÉSIGNATION DES MARCHANDISES LIVRÉES
+------------------------------------------------------------------------
+Équipements logistiques — Commande FL-890
+  Quantité : 6 unités
+  État : Neuf, sous emballage d'origine
+
+Installation réalisée le 18/12/2025 par l'équipe technique ACME.
+
+------------------------------------------------------------------------
+RÉCEPTION
+------------------------------------------------------------------------
+Réceptionné par :   M. Henri Fontaine
+Date de réception : 18/12/2025
+Signature :         [Signé]
+
+Observations : Livraison et installation conformes. Aucune réserve.
+
+------------------------------------------------------------------------
+ACME Distribution SAS — Capital social : 250 000 EUR
+========================================================================

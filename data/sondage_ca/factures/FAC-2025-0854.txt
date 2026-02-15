@@ -1,0 +1,49 @@
+========================================================================
+                        ACME DISTRIBUTION SAS
+              12, rue de l'Industrie — 69003 LYON
+           SIRET : 412 345 678 00012 — TVA : FR 12 412345678
+========================================================================
+
+                        FACTURE DE VENTE
+
+Facture n° :        FAC-2025-0854
+Date :              28/12/2025
+Bon de livraison :  (non référencé)
+
+------------------------------------------------------------------------
+CLIENT
+------------------------------------------------------------------------
+SARL Dubois Commerce
+5, place Bellecour
+69002 LYON
+SIRET : 390 123 456 00012
+N° client : CLI008
+
+------------------------------------------------------------------------
+DÉSIGNATION                        QTÉ    P.U. HT       TOTAL HT
+------------------------------------------------------------------------
+Équipements commerciaux
+  — Commande urgente DC-99            3   4 500,00 EUR   13 500,00 EUR
+Frais de livraison express           1   2 000,00 EUR    2 000,00 EUR
+Mise en service et formation         1   2 500,00 EUR    2 500,00 EUR
+------------------------------------------------------------------------
+                            TOTAL HT                    18 000,00 EUR
+                            TVA 20%                      3 600,00 EUR
+                            ----------------------------------------
+                            TOTAL TTC                   21 600,00 EUR
+------------------------------------------------------------------------
+
+Conditions de paiement : 30 jours net
+Date d'échéance :        27/01/2026
+Mode de règlement :      Virement bancaire
+
+IBAN : FR76 3000 4000 0500 0012 3456 789
+BIC :  BNPAFRPP
+
+Note : Commande urgente passée le 26/12/2025.
+Livraison prévue semaine 2 de janvier 2026.
+
+------------------------------------------------------------------------
+ACME Distribution SAS — Capital social : 250 000 EUR
+RCS Lyon B 412 345 678
+========================================================================

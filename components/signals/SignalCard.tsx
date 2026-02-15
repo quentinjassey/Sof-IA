@@ -1,0 +1,121 @@
+'use client'
+
+import {
+  FileX,
+  CalendarX,
+  DollarSign,
+  Link2Off,
+  Clock,
+  FileQuestion,
+  ChevronRight,
+} from 'lucide-react'
+import { Badge } from '@/components/ui/Badge'
+import { cn } from '@/lib/utils'
+import type { Signal, SignalType, SignalPriority, HumanDecision } from '@/types/database'
+
+// Map signal types to icons
+const signalTypeIcons: Record<SignalType, React.ReactNode> = {
+  absence_piece: <FileX className="h-4 w-4" />,
+  incoherence_date: <CalendarX className="h-4 w-4" />,
+  incoherence_montant: <DollarSign className="h-4 w-4" />,
+  rupture_chaine: <Link2Off className="h-4 w-4" />,
+  rattachement_temporel: <Clock className="h-4 w-4" />,
+  incompletude: <FileQuestion className="h-4 w-4" />,
+}
+
+// Map signal types to French labels
+const signalTypeLabels: Record<SignalType, string> = {
+  absence_piece: 'Piece justificative manquante',
+  incoherence_date: 'Incoherence de dates',
+  incoherence_montant: 'Ecart de montant',
+  rupture_chaine: 'Rupture de la chaine documentaire',
+  rattachement_temporel: 'Doute sur le rattachement temporel',
+  incompletude: 'Information incomplete',
+}
+
+// Map priorities to badge variants
+const priorityVariantMap: Record<SignalPriority, 'priority-high' | 'priority-medium' | 'priority-low'> = {
+  high: 'priority-high',
+  medium: 'priority-medium',
+  low: 'priority-low',
+}
+
+const priorityLabels: Record<SignalPriority, string> = {
+  high: 'Elevee',
+  medium: 'Moyenne',
+  low: 'Faible',
+}
+
+// Map decisions to badge variants
+const decisionVariantMap: Record<HumanDecision, 'pending' | 'validated' | 'rejected' | 'to-investigate'> = {
+  pending: 'pending',
+  validated: 'validated',
+  rejected: 'rejected',
+  to_investigate: 'to-investigate',
+}
+
+const decisionLabels: Record<HumanDecision, string> = {
+  pending: 'En attente',
+  validated: 'Valide',
+  rejected: 'Rejete',
+  to_investigate: 'A approfondir',
+}
+
+interface SignalCardProps {
+  signal: Signal
+  index: number
+  onClick?: () => void
+}
+
+export default function SignalCard({ signal, index, onClick }: SignalCardProps) {
+  const TypeIcon = signalTypeIcons[signal.type] || <FileQuestion className="h-4 w-4" />
+
+  return (
+    <div
+      onClick={onClick}
+      className={cn(
+        "group flex cursor-pointer items-center gap-4 rounded-xl border border-border bg-card px-4 py-3 transition-all",
+        "hover:border-primary/20 hover:shadow-sm"
+      )}
+    >
+      {/* Index */}
+      <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium text-muted-foreground">
+        {index}
+      </span>
+
+      {/* Type icon */}
+      <span className="flex-shrink-0 text-muted-foreground/60">
+        {TypeIcon}
+      </span>
+
+      {/* Content */}
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-card-foreground group-hover:text-primary transition-colors">
+            {signal.rule_triggered || signalTypeLabels[signal.type]}
+          </span>
+          <Badge variant={priorityVariantMap[signal.priority]}>
+            {priorityLabels[signal.priority]}
+          </Badge>
+          <Badge variant={decisionVariantMap[signal.human_decision]}>
+            {decisionLabels[signal.human_decision]}
+          </Badge>
+        </div>
+        <p className="mt-0.5 truncate text-sm text-muted-foreground">
+          {signal.description}
+        </p>
+        {signal.source_document && (
+          <p className="mt-0.5 text-xs text-muted-foreground/60">
+            Source : {signal.source_document}
+            {signal.source_page ? ` — Page ${signal.source_page}` : ''}
+          </p>
+        )}
+      </div>
+
+      {/* Arrow */}
+      <ChevronRight className="h-4 w-4 flex-shrink-0 text-muted-foreground/40 transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
+    </div>
+  )
+}
+
+export { signalTypeLabels, signalTypeIcons, priorityLabels, priorityVariantMap, decisionLabels, decisionVariantMap }

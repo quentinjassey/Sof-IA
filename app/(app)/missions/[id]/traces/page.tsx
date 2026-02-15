@@ -1,0 +1,280 @@
+'use client'
+
+import { useState, useEffect, useCallback, use } from 'react'
+import {
+  Bot,
+  User,
+  Clock,
+  Filter,
+  ArrowUpDown,
+  Loader2,
+  ClipboardList,
+} from 'lucide-react'
+import { cn } from '@/lib/utils'
+import type { Trace, ActorType, TraceAction } from '@/types/database'
+
+// --- Action labels ---
+
+const actionLabels: Record<TraceAction, string> = {
+  mission_created: 'Mission creee',
+  mission_updated: 'Mission mise a jour',
+  mission_deleted: 'Mission supprimee',
+  document_added: 'Document(s) ajoute(s)',
+  document_deleted: 'Document supprime',
+  analysis_started: 'Pre-analyse demarree',
+  analysis_completed: 'Pre-analyse terminee',
+  analysis_failed: 'Pre-analyse echouee',
+  fec_parsed: 'FEC parse',
+  pdf_extracted: 'PDF extraits',
+  rapprochement_completed: 'Rapprochement termine',
+  signals_generated: 'Signaux generes',
+  deliverables_generated: 'Livrables generes',
+  signal_validated: 'Signal valide',
+  signal_rejected: 'Signal rejete',
+  signal_to_investigate: 'Signal a approfondir',
+  deliverables_regenerated: 'Livrables regeneres',
+  deliverables_exported: 'Livrables exportes',
+}
+
+// --- Component ---
+
+export default function TracesPage({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}) {
+  const { id: missionId } = use(params)
+
+  const [traces, setTraces] = useState<Trace[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [actorFilter, setActorFilter] = useState<'' | ActorType>('')
+  const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc')
+
+  // --- Fetch traces ---
+
+  const fetchTraces = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+
+    try {
+      const res = await fetch(`/api/missions/${missionId}/traces?limit=200`)
+      if (!res.ok) {
+        throw new Error('Erreur lors du chargement du journal.')
+      }
+
+      const json = await res.json()
+      setTraces(json.data || [])
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur interne.')
+    } finally {
+      setLoading(false)
+    }
+  }, [missionId])
+
+  useEffect(() => {
+    fetchTraces()
+  }, [fetchTraces])
+
+  // --- Filter and sort ---
+
+  const filteredTraces = traces
+    .filter((t) => !actorFilter || t.actor === actorFilter)
+    .sort((a, b) => {
+      const dateA = new Date(a.timestamp).getTime()
+      const dateB = new Date(b.timestamp).getTime()
+      return sortOrder === 'desc' ? dateB - dateA : dateA - dateB
+    })
+
+  // Stats
+  const sofiaCount = traces.filter((t) => t.actor === 'sofia').length
+  const userCount = traces.filter((t) => t.actor === 'user').length
+
+  // --- Format timestamp ---
+
+  function formatTimestamp(iso: string): string {
+    const date = new Date(iso)
+    return date.toLocaleDateString('fr-FR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    })
+  }
+
+  // --- Render ---
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
+  }
+
+  return (
+    <div className="mx-auto max-w-4xl space-y-6 animate-fade-in">
+      {/* Page header */}
+      <div>
+        <h1 className="text-2xl font-bold font-serif text-foreground">Journal de tracabilite</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Historique chronologique de toutes les actions (Sof&apos;IA et CAC).
+          {traces.length > 0 && ` ${traces.length} action${traces.length !== 1 ? 's' : ''} tracee${traces.length !== 1 ? 's' : ''}.`}
+        </p>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-3 gap-4">
+        <div className="rounded-xl border border-border bg-card px-4 py-3">
+          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Total</p>
+          <p className="mt-1 text-2xl font-bold text-card-foreground">{traces.length}</p>
+        </div>
+        <div className="rounded-xl border border-border bg-card px-4 py-3">
+          <div className="flex items-center gap-2">
+            <Bot className="h-4 w-4 text-primary" />
+            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Sof&apos;IA</p>
+          </div>
+          <p className="mt-1 text-2xl font-bold text-primary">{sofiaCount}</p>
+        </div>
+        <div className="rounded-xl border border-border bg-card px-4 py-3">
+          <div className="flex items-center gap-2">
+            <User className="h-4 w-4 text-primary" />
+            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">CAC</p>
+          </div>
+          <p className="mt-1 text-2xl font-bold text-primary">{userCount}</p>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-wrap items-center gap-3">
+        <Filter className="h-4 w-4 text-muted-foreground" />
+        <span className="text-sm font-medium text-muted-foreground">Filtre :</span>
+        <div className="flex rounded-lg border border-border bg-card text-sm">
+          <button
+            onClick={() => setActorFilter('')}
+            className={cn(
+              'px-4 py-1.5 transition-colors',
+              actorFilter === '' ? 'bg-primary/10 font-medium text-primary' : 'text-muted-foreground hover:bg-accent'
+            )}
+          >
+            Tous
+          </button>
+          <button
+            onClick={() => setActorFilter('sofia')}
+            className={cn(
+              'border-l border-border px-4 py-1.5 transition-colors',
+              actorFilter === 'sofia' ? 'bg-primary/10 font-medium text-primary' : 'text-muted-foreground hover:bg-accent'
+            )}
+          >
+            Sof&apos;IA
+          </button>
+          <button
+            onClick={() => setActorFilter('user')}
+            className={cn(
+              'border-l border-border px-4 py-1.5 transition-colors',
+              actorFilter === 'user' ? 'bg-primary/10 font-medium text-primary' : 'text-muted-foreground hover:bg-accent'
+            )}
+          >
+            CAC
+          </button>
+        </div>
+
+        <button
+          onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}
+          className="ml-auto flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent"
+        >
+          <ArrowUpDown className="h-3.5 w-3.5" />
+          {sortOrder === 'desc' ? 'Plus recent d\'abord' : 'Plus ancien d\'abord'}
+        </button>
+      </div>
+
+      {/* Error display */}
+      {error && (
+        <div className="rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-center">
+          <p className="text-sm text-destructive">{error}</p>
+        </div>
+      )}
+
+      {/* Timeline */}
+      {filteredTraces.length === 0 ? (
+        <div className="rounded-xl border border-border bg-card px-6 py-10 text-center">
+          <ClipboardList className="mx-auto h-10 w-10 text-muted-foreground/40" />
+          <p className="mt-3 text-sm font-medium text-muted-foreground">
+            {actorFilter ? 'Aucune action ne correspond au filtre selectionne.' : 'Aucune action tracee pour cette mission.'}
+          </p>
+        </div>
+      ) : (
+        <div className="relative">
+          {/* Vertical line */}
+          <div className="absolute left-6 top-0 h-full w-px bg-border" />
+
+          <div className="space-y-0">
+            {filteredTraces.map((trace) => {
+              const isSofia = trace.actor === 'sofia'
+
+              return (
+                <div key={trace.id} className="relative flex gap-4 py-3 pl-0">
+                  {/* Timeline dot */}
+                  <div className="relative z-10 flex h-12 w-12 flex-shrink-0 items-center justify-center">
+                    <div
+                      className={cn(
+                        'flex h-8 w-8 items-center justify-center rounded-full',
+                        isSofia ? 'bg-primary/10' : 'bg-primary/10'
+                      )}
+                    >
+                      {isSofia ? (
+                        <Bot className="h-4 w-4 text-primary" />
+                      ) : (
+                        <User className="h-4 w-4 text-primary" />
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Content */}
+                  <div className="min-w-0 flex-1 rounded-lg border border-border bg-card px-4 py-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-medium text-card-foreground">
+                          {actionLabels[trace.action] || trace.action}
+                        </p>
+                        <p className="mt-0.5 text-xs text-muted-foreground">
+                          {trace.actor_name}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground/70">
+                        <Clock className="h-3 w-3" />
+                        {formatTimestamp(trace.timestamp)}
+                      </div>
+                    </div>
+
+                    {trace.details && (
+                      <p className="mt-2 text-sm text-muted-foreground">{trace.details}</p>
+                    )}
+
+                    {trace.target_type && (
+                      <div className="mt-2">
+                        <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                          {trace.target_type}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Footer */}
+      <div className="rounded-lg border border-muted bg-muted/50 px-5 py-3">
+        <p className="text-xs text-muted-foreground">
+          Ce journal est genere automatiquement et ne peut etre modifie.
+          Il constitue la trace des diligences realisees dans le cadre de cette pre-analyse.
+        </p>
+      </div>
+    </div>
+  )
+}

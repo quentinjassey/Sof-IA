@@ -1,0 +1,294 @@
+'use client'
+
+import { useState, useEffect, useCallback, use } from 'react'
+import {
+  FileCheck,
+  FileSpreadsheet,
+  FileText,
+  ClipboardList,
+  Download,
+  RotateCcw,
+  Loader2,
+  AlertCircle,
+  Info,
+} from 'lucide-react'
+import DisclaimerBanner from '@/components/ui/DisclaimerBanner'
+import { Button } from '@/components/ui/Button'
+import { Badge } from '@/components/ui/Badge'
+import { cn } from '@/lib/utils'
+import type { Deliverable, DeliverableType } from '@/types/database'
+
+// --- Deliverable metadata ---
+
+interface DeliverableMeta {
+  title: string
+  description: string
+  icon: React.ReactNode
+  formatLabel: string
+}
+
+const deliverableMeta: Record<DeliverableType, DeliverableMeta> = {
+  checklist_completude: {
+    title: 'Check-list de completude documentaire',
+    description: 'Liste des documents attendus, recus et leur statut. Permet de verifier la completude du dossier documentaire.',
+    icon: <FileCheck className="h-6 w-6 text-primary" />,
+    formatLabel: 'PDF',
+  },
+  tableau_signaux: {
+    title: 'Tableau des signaux documentaires',
+    description: 'Tableau detaille de tous les signaux detectes avec les decisions du commissaire aux comptes.',
+    icon: <FileSpreadsheet className="h-6 w-6 text-primary" />,
+    formatLabel: 'XLSX',
+  },
+  synthese_preanalyse: {
+    title: 'Synthese de pre-analyse (NEP 230)',
+    description: 'Document de synthese integrable au dossier de travail. Perimetre, constats, decisions et limites.',
+    icon: <FileText className="h-6 w-6 text-primary" />,
+    formatLabel: 'PDF',
+  },
+  journal_tracabilite: {
+    title: 'Journal de tracabilite',
+    description: 'Historique chronologique complet de toutes les actions realisees (Sof\'IA et CAC).',
+    icon: <ClipboardList className="h-6 w-6 text-primary" />,
+    formatLabel: 'PDF',
+  },
+}
+
+// Order of deliverables
+const deliverableOrder: DeliverableType[] = [
+  'checklist_completude',
+  'tableau_signaux',
+  'synthese_preanalyse',
+  'journal_tracabilite',
+]
+
+// --- Component ---
+
+export default function DeliverablesPage({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}) {
+  const { id: missionId } = use(params)
+
+  const [deliverables, setDeliverables] = useState<Deliverable[]>([])
+  const [loading, setLoading] = useState(true)
+  const [regenerating, setRegenerating] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+
+  // --- Fetch deliverables ---
+
+  const fetchDeliverables = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/missions/${missionId}/deliverables`)
+      if (!res.ok) {
+        throw new Error('Erreur lors du chargement des livrables.')
+      }
+      const json = await res.json()
+      setDeliverables(json.data || [])
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur interne.')
+    } finally {
+      setLoading(false)
+    }
+  }, [missionId])
+
+  useEffect(() => {
+    fetchDeliverables()
+  }, [fetchDeliverables])
+
+  // --- Regenerate ---
+
+  async function handleRegenerate() {
+    setRegenerating(true)
+    setError(null)
+    setSuccessMessage(null)
+
+    try {
+      const res = await fetch(`/api/missions/${missionId}/deliverables`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Erreur lors de la regeneration.')
+      }
+
+      setSuccessMessage('Livrables regeneres avec succes. Vos decisions de validation sont integrees.')
+      await fetchDeliverables()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur lors de la regeneration.')
+    } finally {
+      setRegenerating(false)
+    }
+  }
+
+  // --- Download ---
+
+  function handleDownload(deliverable: Deliverable) {
+    window.open(`/api/missions/${missionId}/deliverables/${deliverable.id}/download`, '_blank')
+  }
+
+  // --- Get deliverable by type ---
+
+  function getDeliverable(type: DeliverableType): Deliverable | undefined {
+    return deliverables.find((d) => d.type === type)
+  }
+
+  // --- Render ---
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
+  }
+
+  return (
+    <div className="mx-auto max-w-4xl space-y-6 animate-fade-in">
+      {/* Page header */}
+      <div>
+        <h1 className="text-2xl font-bold font-serif text-foreground">Livrables generes</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Check-list, tableau des signaux, synthese de pre-analyse et journal de tracabilite.
+        </p>
+      </div>
+
+      <DisclaimerBanner />
+
+      {/* Info note */}
+      <div className="flex items-start gap-3 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
+        <Info className="mt-0.5 h-5 w-5 flex-shrink-0 text-primary" />
+        <div>
+          <p className="text-sm text-primary">
+            Les livrables integrent vos decisions de validation.
+            Cliquez sur &laquo; Regenerer &raquo; pour mettre a jour apres de nouvelles decisions.
+          </p>
+        </div>
+      </div>
+
+      {/* Error display */}
+      {error && (
+        <div className="flex items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3">
+          <AlertCircle className="h-5 w-5 flex-shrink-0 text-destructive" />
+          <p className="text-sm text-destructive">{error}</p>
+        </div>
+      )}
+
+      {/* Success message */}
+      {successMessage && (
+        <div className="flex items-center gap-2 rounded-lg border border-success/20 bg-success/10 px-4 py-3">
+          <FileCheck className="h-5 w-5 flex-shrink-0 text-success" />
+          <p className="text-sm text-success">{successMessage}</p>
+        </div>
+      )}
+
+      {/* Deliverable cards */}
+      <div className="space-y-4">
+        {deliverableOrder.map((type) => {
+          const meta = deliverableMeta[type]
+          const deliverable = getDeliverable(type)
+          const isAvailable = !!deliverable
+
+          return (
+            <div
+              key={type}
+              className={cn(
+                'rounded-2xl border border-border bg-card transition-shadow',
+                isAvailable ? 'hover:shadow-sm' : 'opacity-60'
+              )}
+            >
+              <div className="flex items-start gap-4 px-5 py-4">
+                {/* Icon */}
+                <div className="mt-0.5 flex-shrink-0">
+                  {meta.icon}
+                </div>
+
+                {/* Content */}
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-3">
+                    <h3 className="text-sm font-semibold text-card-foreground">{meta.title}</h3>
+                    <Badge variant="default">{meta.formatLabel}</Badge>
+                  </div>
+                  <p className="mt-1 text-sm text-muted-foreground">{meta.description}</p>
+                  {deliverable && (
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      Genere le {new Date(deliverable.generated_at).toLocaleDateString('fr-FR', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </p>
+                  )}
+                </div>
+
+                {/* Download button */}
+                <div className="flex-shrink-0">
+                  {isAvailable ? (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => handleDownload(deliverable!)}
+                      iconLeft={<Download className="h-4 w-4" />}
+                    >
+                      Telecharger {meta.formatLabel}
+                    </Button>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">Non disponible</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Empty state */}
+      {deliverables.length === 0 && (
+        <div className="rounded-2xl border border-border bg-card px-6 py-10 text-center">
+          <FileText className="mx-auto h-10 w-10 text-muted-foreground" />
+          <p className="mt-3 text-sm font-medium text-muted-foreground">
+            Aucun livrable genere pour cette mission.
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Les livrables seront generes automatiquement a l&apos;issue de la pre-analyse.
+          </p>
+        </div>
+      )}
+
+      {/* Regenerate button */}
+      <div className="rounded-2xl border border-border bg-card px-5 py-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium text-card-foreground">Regenerer les livrables</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Regenere tous les livrables en integrant vos dernieres decisions de validation.
+            </p>
+          </div>
+          <Button
+            variant="secondary"
+            onClick={handleRegenerate}
+            loading={regenerating}
+            disabled={regenerating || deliverables.length === 0}
+            iconLeft={<RotateCcw className="h-4 w-4" />}
+          >
+            Regenerer tous les livrables
+          </Button>
+        </div>
+      </div>
+
+      {/* Footer disclaimer */}
+      <div className="rounded-lg border border-muted bg-muted/50 px-5 py-3">
+        <p className="text-xs text-muted-foreground">
+          Ces documents sont des outils de pre-analyse. Ils ne constituent pas une conclusion d&apos;audit.
+        </p>
+      </div>
+    </div>
+  )
+}

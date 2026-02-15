@@ -1,0 +1,48 @@
+========================================================================
+                        ACME DISTRIBUTION SAS
+              12, rue de l'Industrie — 69003 LYON
+           SIRET : 412 345 678 00012 — TVA : FR 12 412345678
+========================================================================
+
+                        FACTURE DE VENTE
+
+Facture n° :        FAC-2025-0850
+Date :              05/11/2025
+Bon de livraison :  BL-2025-0615
+
+------------------------------------------------------------------------
+CLIENT
+------------------------------------------------------------------------
+SARL Petit & Fils
+15, zone industrielle des Bruyères
+01000 BOURG-EN-BRESSE
+SIRET : 856 789 012 00056
+N° client : CLI004
+
+------------------------------------------------------------------------
+DÉSIGNATION                        QTÉ    P.U. HT       TOTAL HT
+------------------------------------------------------------------------
+Fournitures industrielles
+  — Cde 1547 Lot complet             1  22 000,00 EUR   22 000,00 EUR
+Transport spécial matières
+  dangereuses                         1   3 500,00 EUR    3 500,00 EUR
+Assurance marchandise
+  transportée                         1   3 000,00 EUR    3 000,00 EUR
+------------------------------------------------------------------------
+                            TOTAL HT                    28 500,00 EUR
+                            TVA 20%                      5 700,00 EUR
+                            ----------------------------------------
+                            TOTAL TTC                   34 200,00 EUR
+------------------------------------------------------------------------
+
+Conditions de paiement : 60 jours fin de mois
+Date d'échéance :        04/01/2026
+Mode de règlement :      Virement bancaire
+
+IBAN : FR76 3000 4000 0500 0012 3456 789
+BIC :  BNPAFRPP
+
+------------------------------------------------------------------------
+ACME Distribution SAS — Capital social : 250 000 EUR
+RCS Lyon B 412 345 678
+========================================================================

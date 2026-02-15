@@ -1,0 +1,43 @@
+========================================================================
+                        ACME DISTRIBUTION SAS
+              12, rue de l'Industrie — 69003 LYON
+========================================================================
+
+                      BON DE LIVRAISON
+
+N° BL :             BL-2025-0781
+Date d'expédition : 20/12/2025
+Date de livraison : 22/12/2025
+Réf. commande :     Cde CLI011-MC-445
+Facture associée :  FAC-2025-1181
+
+------------------------------------------------------------------------
+DESTINATAIRE
+------------------------------------------------------------------------
+SARL Mercier & Cie
+14, rue Garibaldi
+69006 LYON
+Contact : M. Jacques Mercier
+Tél. : 04 78 12 56 78
+
+------------------------------------------------------------------------
+DÉSIGNATION DES MARCHANDISES LIVRÉES
+------------------------------------------------------------------------
+Matériel de bureau professionnel — Commande MC-445
+  Quantité : 20 unités
+  État : Neuf
+
+------------------------------------------------------------------------
+RÉCEPTION
+------------------------------------------------------------------------
+Réceptionné par :   M. Jacques Mercier
+Date de réception : 22/12/2025
+Signature :         [Signé]
+
+Observations : Réception conforme à la commande. Aucune réserve à la
+               livraison. (Note : retour partiel effectué le 08/01/2026
+               pour 10 unités non conformes — voir avoir AV-2026-0001)
+
+------------------------------------------------------------------------
+ACME Distribution SAS — Capital social : 250 000 EUR
+========================================================================

@@ -1,0 +1,134 @@
+========================================================================
+                        ACME DISTRIBUTION SAS
+              12, rue de l'Industrie — 69003 LYON
+           SIRET : 412 345 678 00012
+           RCS Lyon B 412 345 678
+========================================================================
+
+             COMPTE DE RÉSULTAT DE L'EXERCICE 2025
+          (en euros — exercice du 01/01/2025 au 31/12/2025)
+
+========================================================================
+                    PRODUITS D'EXPLOITATION
+========================================================================
+
+                                                        2025            2024
+                                                        --------        --------
+
+  Chiffre d'affaires net
+    Ventes de produits finis                         2 850 000,00    2 680 000,00
+    Ventes de marchandises                             920 000,00      870 000,00
+    Prestations de services                            280 000,00      250 000,00
+  -----------------------------------------------------------------------
+  Chiffre d'affaires net total                       4 050 000,00    3 800 000,00
+
+  Production stockée (variation)                        22 000,00      -15 000,00
+  Subventions d'exploitation                            12 000,00       15 000,00
+  Reprises sur provisions et amortissements             18 000,00       12 000,00
+  Autres produits d'exploitation                        35 000,00       28 000,00
+  -----------------------------------------------------------------------
+  TOTAL PRODUITS D'EXPLOITATION                      4 137 000,00    3 840 000,00
+
+========================================================================
+                    CHARGES D'EXPLOITATION
+========================================================================
+
+  Achats de matières premières et approvisionnements 1 420 000,00    1 350 000,00
+  Variation de stocks (matières premières)             -18 000,00       12 000,00
+  Achats de marchandises                               580 000,00      540 000,00
+  Variation de stocks (marchandises)                   -22 000,00        8 000,00
+
+  Autres charges externes
+    Sous-traitance                                     185 000,00      170 000,00
+    Locations et charges locatives                     120 000,00      115 000,00
+    Entretien et réparations                            65 000,00       58 000,00
+    Assurances                                          42 000,00       40 000,00
+    Honoraires                                          78 000,00       72 000,00
+    Transports                                         145 000,00      132 000,00
+    Déplacements et réceptions                          38 000,00       35 000,00
+    Frais postaux et télécommunications                 22 000,00       20 000,00
+    Publicité et communication                          55 000,00       48 000,00
+    Autres charges externes                             95 000,00       52 000,00
+  -----------------------------------------------------------------------
+  Total autres charges externes                        845 000,00      742 000,00
+
+  Impôts et taxes                                       85 000,00       80 000,00
+
+  Charges de personnel
+    Salaires et traitements                            680 000,00      640 000,00
+    Charges sociales                                   285 000,00      268 000,00
+  -----------------------------------------------------------------------
+  Total charges de personnel                           965 000,00      908 000,00
+
+  Dotations aux amortissements et provisions
+    Dotations aux amortissements des immobilisations   142 000,00      135 000,00
+    Dotations aux provisions pour risques               14 000,00       10 000,00
+  -----------------------------------------------------------------------
+  Total dotations                                      156 000,00      145 000,00
+
+  Autres charges d'exploitation                         12 000,00       10 000,00
+
+  -----------------------------------------------------------------------
+  TOTAL CHARGES D'EXPLOITATION                       3 823 000,00    3 595 000,00
+
+========================================================================
+  RÉSULTAT D'EXPLOITATION                              314 000,00      245 000,00
+========================================================================
+
+========================================================================
+                     RÉSULTAT FINANCIER
+========================================================================
+
+  Produits financiers
+    Revenus des participations                           1 200,00        1 000,00
+    Intérêts et produits assimilés                       3 800,00        5 200,00
+  -----------------------------------------------------------------------
+  Total produits financiers                              5 000,00        6 200,00
+
+  Charges financières
+    Intérêts et charges assimilées                      32 000,00       36 000,00
+    Pertes de change                                     2 000,00        1 500,00
+  -----------------------------------------------------------------------
+  Total charges financières                             34 000,00       37 500,00
+
+  -----------------------------------------------------------------------
+  RÉSULTAT FINANCIER                                   -29 000,00      -31 300,00
+
+========================================================================
+  RÉSULTAT COURANT AVANT IMPÔTS                        285 000,00      213 700,00
+========================================================================
+
+========================================================================
+                   RÉSULTAT EXCEPTIONNEL
+========================================================================
+
+  Produits exceptionnels
+    Produits de cession d'éléments d'actif              15 000,00        5 000,00
+    Autres produits exceptionnels                        3 000,00        2 000,00
+  -----------------------------------------------------------------------
+  Total produits exceptionnels                          18 000,00        7 000,00
+
+  Charges exceptionnelles
+    Valeur nette comptable des éléments cédés           12 000,00        3 500,00
+    Autres charges exceptionnelles                       8 000,00        2 200,00
+  -----------------------------------------------------------------------
+  Total charges exceptionnelles                         20 000,00        5 700,00
+
+  -----------------------------------------------------------------------
+  RÉSULTAT EXCEPTIONNEL                                 -2 000,00        1 300,00
+
+========================================================================
+
+  Participation des salariés                            18 000,00       12 000,00
+  Impôt sur les bénéfices                              137 000,00       73 000,00
+
+========================================================================
+  RÉSULTAT NET DE L'EXERCICE                           128 000,00      130 000,00
+========================================================================
+
+Fait à Lyon, le 15 février 2026
+
+Le Président,
+M. Jean-Marc Rousseau
+
+========================================================================

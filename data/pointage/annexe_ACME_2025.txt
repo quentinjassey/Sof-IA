@@ -1,0 +1,272 @@
+========================================================================
+                        ACME DISTRIBUTION SAS
+              12, rue de l'Industrie — 69003 LYON
+           SIRET : 412 345 678 00012
+           RCS Lyon B 412 345 678
+========================================================================
+
+            ANNEXE AUX COMPTES ANNUELS
+         EXERCICE CLOS LE 31 DÉCEMBRE 2025
+
+========================================================================
+
+L'exercice a une durée de 12 mois, couvrant la période du 1er janvier
+au 31 décembre 2025. L'exercice précédent avait également une durée
+de 12 mois.
+
+Les comptes annuels ont été établis conformément aux dispositions
+du Plan Comptable Général (PCG) et aux règlements de l'Autorité
+des Normes Comptables (ANC).
+
+========================================================================
+NOTE 1 — RÈGLES ET MÉTHODES COMPTABLES
+========================================================================
+
+1.1 Immobilisations incorporelles
+    Les logiciels sont amortis linéairement sur 5 ans.
+    Le fonds commercial n'est pas amorti. Un test de dépréciation
+    est réalisé annuellement.
+
+1.2 Immobilisations corporelles
+    Les immobilisations corporelles sont évaluées à leur coût
+    d'acquisition. Les amortissements sont calculés selon le mode
+    linéaire sur les durées suivantes :
+    - Constructions : 20 ans
+    - Matériel industriel : 10 ans
+    - Matériel de transport : 5 ans
+    - Matériel de bureau : 5 ans
+    - Agencements : 10 ans
+
+1.3 Stocks
+    Les stocks sont évalués au coût moyen pondéré (CUMP).
+    Une provision pour dépréciation est constituée lorsque
+    la valeur nette de réalisation est inférieure au coût.
+
+1.4 Créances
+    Les créances sont évaluées à leur valeur nominale.
+    Une provision pour dépréciation est constituée pour les
+    créances dont le recouvrement est incertain.
+
+1.5 Provisions pour risques et charges
+    Les provisions sont constituées conformément au règlement
+    ANC n° 2014-03 pour couvrir les risques identifiés.
+
+========================================================================
+NOTE 2 — IMMOBILISATIONS INCORPORELLES
+========================================================================
+
+                        Début exercice   Acquisitions   Cessions    Fin exercice
+                        --------         --------       --------    --------
+Logiciels                 120 000,00            0,00        0,00     120 000,00
+Fonds commercial          150 000,00            0,00        0,00     150 000,00
+                        --------         --------       --------    --------
+Total                     270 000,00            0,00        0,00     270 000,00
+
+Amortissements :
+Logiciels :  72 000,00 EUR (amortissement cumulé)
+Dotation de l'exercice : 24 000,00 EUR
+
+========================================================================
+NOTE 3 — IMMOBILISATIONS CORPORELLES
+========================================================================
+
+                        Début exercice   Acquisitions   Cessions    Fin exercice
+                        --------         --------       --------    --------
+Terrains                  180 000,00            0,00        0,00     180 000,00
+Constructions             520 000,00            0,00        0,00     520 000,00
+Matériel industriel       400 000,00       80 000,00        0,00     480 000,00
+Matériel de transport     145 000,00            0,00   -15 000,00    130 000,00
+Matériel de bureau         85 000,00            0,00        0,00      85 000,00
+Agencements               120 000,00            0,00        0,00     120 000,00
+                        --------         --------       --------    --------
+Total brut              1 450 000,00       80 000,00   -15 000,00  1 515 000,00
+
+Amortissements cumulés :   519 000,00
+Dotation de l'exercice :   118 000,00
+Reprise (cession) :        -3 000,00
+
+Valeur nette comptable des immobilisations corporelles : 981 000,00 EUR
+
+Note : Le poste matériel industriel a augmenté de 80 000 EUR suite
+à l'acquisition d'une machine d'emballage automatisée en mars 2025.
+Un véhicule utilitaire a été cédé pour 15 000 EUR (VNC : 12 000 EUR),
+dégageant un profit de cession de 3 000 EUR.
+
+========================================================================
+NOTE 4 — IMMOBILISATIONS FINANCIÈRES
+========================================================================
+
+Participations : 25 000,00 EUR
+  Participation de 10% dans la société ACME Logistique SARL
+  (capital : 250 000 EUR). Capitaux propres au 31/12/2025 :
+  280 000 EUR. Résultat 2025 : 12 000 EUR.
+
+Dépôts et cautionnements : 18 000,00 EUR
+  Dépôt de garantie locaux commerciaux : 15 000 EUR
+  Caution transporteur : 3 000 EUR
+
+========================================================================
+NOTE 5 — STOCKS
+========================================================================
+
+                        2025            2024            Variation
+                        --------        --------        --------
+Matières premières       180 000,00      162 000,00      +18 000,00
+Produits finis           220 000,00      198 000,00      +22 000,00
+                        --------        --------        --------
+Total net                400 000,00      360 000,00      +40 000,00
+
+Provision pour dépréciation des stocks : 15 000,00 EUR
+(Matières premières : 5 000 EUR, Produits finis : 10 000 EUR)
+
+La hausse des stocks s'explique par l'augmentation de l'activité
+au dernier trimestre 2025 et par la constitution de stocks de
+sécurité dans un contexte d'allongement des délais fournisseurs.
+
+========================================================================
+NOTE 6 — CRÉANCES CLIENTS
+========================================================================
+
+Créances clients brutes : 485 000,00 EUR
+Provision pour dépréciation : 12 000,00 EUR
+Créances clients nettes : 473 000,00 EUR
+
+Ventilation par échéance :
+  Non échues :        320 000,00 EUR
+  Échues < 30 jours : 105 000,00 EUR
+  Échues 30-90 jours :  45 000,00 EUR
+  Échues > 90 jours :   15 000,00 EUR (entièrement provisionnés : 12 000 EUR)
+
+Les 3 000 EUR de créances échues > 90 jours non provisionnées
+concernent un litige en cours avec le client Widgets Corp SAS
+pour lequel un recouvrement partiel est attendu.
+
+========================================================================
+NOTE 7 — CAPITAUX PROPRES
+========================================================================
+
+Capital social : 250 000 EUR (2 500 actions de 100 EUR)
+Actionnaires : M. Jean-Marc Rousseau (60%), Mme Anne Rousseau (40%)
+
+Évolution des réserves :
+  Réserve légale : 25 000 EUR (plafond atteint)
+  Autres réserves : 380 000,00 EUR (dont 30 000 EUR affectés de N-1)
+
+Résultat N-1 (130 000,00 EUR) affecté comme suit :
+  Dividendes distribués :  100 000,00 EUR
+  Autres réserves :         30 000,00 EUR
+
+========================================================================
+NOTE 8 — PROVISIONS POUR RISQUES ET CHARGES
+========================================================================
+
+                        Début exercice   Dotations   Reprises    Fin exercice
+                        --------         --------    --------    --------
+Litiges                    35 000,00      15 000,00   -5 000,00    45 000,00
+Garanties clients          18 000,00       8 000,00   -4 000,00    22 000,00
+                        --------         --------    --------    --------
+Total                      53 000,00      23 000,00   -9 000,00    67 000,00
+
+Détail des litiges provisionnés :
+- Litige commercial avec la société Nexus SARL (prud'hommes) :
+  provision de 30 000 EUR. Audience prévue en mars 2026.
+- Litige fournisseur Transport Express (facturation contestée) :
+  provision de 15 000 EUR. Négociation en cours.
+
+========================================================================
+NOTE 9 — EMPRUNTS ET DETTES FINANCIÈRES
+========================================================================
+
+Emprunt bancaire auprès de la Banque Populaire
+  Capital initial : 800 000 EUR (mars 2021)
+  Durée : 10 ans
+  Taux fixe : 2,15%
+  Capital restant dû au 31/12/2025 : 520 000,00 EUR
+  Échéances à moins d'un an : 60 000 EUR
+  Échéances à plus de 5 ans : 200 000 EUR
+
+Intérêts courus non échus au 31/12/2025 : 8 500,00 EUR
+
+========================================================================
+NOTE 10 — CHIFFRE D'AFFAIRES
+========================================================================
+
+                        2025            2024            Variation
+                        --------        --------        --------
+France                3 650 000,00    3 450 000,00        +5,8%
+Export                  400 000,00      350 000,00       +14,3%
+                        --------        --------        --------
+Total                 4 050 000,00    3 800 000,00        +6,6%
+
+Le chiffre d'affaires a progressé de 6,6% par rapport à l'exercice
+précédent, porté par le développement de l'activité export (+14,3%)
+et la croissance des ventes de produits finis sur le marché national.
+
+========================================================================
+NOTE 11 — CHARGES DE PERSONNEL
+========================================================================
+
+Effectif moyen : 22 salariés (2024 : 20 salariés)
+
+  Cadres :               5
+  Employés et techniciens : 12
+  Ouvriers :             5
+
+Salaires et traitements : 680 000,00 EUR
+Charges sociales :        285 000,00 EUR
+Participation :            18 000,00 EUR
+
+La hausse des charges de personnel (+6,3%) s'explique par
+le recrutement de 2 collaborateurs supplémentaires en 2025
+(un technico-commercial et un magasinier).
+
+========================================================================
+NOTE 12 — RÉSULTAT EXCEPTIONNEL
+========================================================================
+
+Produits exceptionnels : 18 000,00 EUR
+  Dont plus-value de cession véhicule : 3 000 EUR
+  Remboursement assurance sinistre : 12 000 EUR
+  Divers : 3 000 EUR
+
+Charges exceptionnelles : 20 000,00 EUR
+  Dont VNC véhicule cédé : 12 000 EUR
+  Pénalités et amendes : 5 000 EUR
+  Divers : 3 000 EUR
+
+========================================================================
+NOTE 13 — IMPÔT SUR LES SOCIÉTÉS
+========================================================================
+
+Résultat fiscal : 548 000,00 EUR
+Impôt sur les sociétés : 137 000,00 EUR
+  Dont IS au taux normal (25%) : 137 000 EUR
+
+Charge d'impôt effective : 48,1% du résultat courant avant impôts.
+La différence avec le taux nominal (25%) s'explique principalement
+par des charges non déductibles (amendes, provisions non déductibles)
+et la participation des salariés.
+
+========================================================================
+NOTE 14 — AUTRES CHARGES EXTERNES
+========================================================================
+
+Le poste "Autres charges externes" (hors sous-traitance, locations,
+entretien, assurances, honoraires, transports, déplacements, frais
+postaux et publicité) s'élève à 95 000,00 EUR contre 52 000,00 EUR
+en 2024.
+
+Ce poste comprend notamment :
+  - Frais de recrutement : 25 000 EUR
+  - Frais de formation : 18 000 EUR
+  - Cotisations et abonnements : 12 000 EUR
+  - Divers : 40 000 EUR
+
+========================================================================
+
+Fait à Lyon, le 15 février 2026
+
+Le Président,
+M. Jean-Marc Rousseau
+
+========================================================================

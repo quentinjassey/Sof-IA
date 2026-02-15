@@ -1,0 +1,67 @@
+========================================================================
+                        ACME DISTRIBUTION SAS
+              12, rue de l'Industrie — 69003 LYON
+========================================================================
+
+                      BON DE LIVRAISON
+
+N° BL :             BL-2025-0616
+Date d'expédition : 29/11/2025
+Date de livraison : 01/12/2025
+Réf. commande :     Cde CLI006-C78
+Facture associée :  FAC-2025-0852
+
+------------------------------------------------------------------------
+DESTINATAIRE
+------------------------------------------------------------------------
+Ets Bernard & Associés
+78, rue de la République
+69002 LYON
+Contact : Mme Claire Bernard
+Tél. : 04 78 56 78 90
+
+------------------------------------------------------------------------
+DÉSIGNATION DES MARCHANDISES LIVRÉES
+------------------------------------------------------------------------
+Composants électroniques — Lot C78 Série A
+  Quantité : 100 unités
+  État : Neuf
+
+Composants électroniques — Lot C78 Série B
+  Quantité : 50 unités
+  État : Neuf
+
+Composants électroniques — Lot C78 Série C (ajout)
+  Quantité : 10 unités
+  État : Neuf — ajoutés en complément à la demande du client
+
+------------------------------------------------------------------------
+MONTANT TOTAL LIVRÉ (pour rapprochement)
+------------------------------------------------------------------------
+Série A : 100 x 85,00 EUR =   8 500,00 EUR
+Série B :  50 x 80,00 EUR =   4 000,00 EUR
+Série C :  10 x 75,00 EUR =     750,00 EUR (complément)
+                               ---------------
+Total HT livré :              13 250,00 EUR
+
+------------------------------------------------------------------------
+CONDITIONS DE LIVRAISON
+------------------------------------------------------------------------
+Transporteur :      Livraison directe (coursier ACME)
+N° de suivi :       INT-2025-1201
+Livraison :         Franco de port
+
+------------------------------------------------------------------------
+RÉCEPTION
+------------------------------------------------------------------------
+Réceptionné par :   Mme Claire Bernard
+Date de réception : 01/12/2025
+Signature :         [Signé]
+
+Observations : Quantités conformes au BL. Le client note la présence
+               de 10 unités supplémentaires Série C non commandées
+               initialement. À régulariser par avenant.
+
+------------------------------------------------------------------------
+ACME Distribution SAS — Capital social : 250 000 EUR
+========================================================================

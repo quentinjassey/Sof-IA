@@ -1,0 +1,28 @@
+JournalCode	JournalLib	EcritureNum	EcritureDate	CompteNum	CompteLib	CompAuxNum	CompAuxLib	PieceRef	PieceDate	EcritureLib	Debit	Credit	EcrtureLet	DateLet	ValidDate	Montantdevise	Idevise
+VE	Ventes	VE-2025-0801	20251003	411001	Clients - Société Durand Frères	CLI001	Société Durand Frères	FAC-2025-0847	20251003	Vente marchandises Durand Frères - Lot A42	18750,00	0,00			20251015
+VE	Ventes	VE-2025-0801	20251003	701000	Ventes de produits finis			FAC-2025-0847	20251003	Vente marchandises Durand Frères - Lot A42	0,00	15625,00			20251015
+VE	Ventes	VE-2025-0801	20251003	445710	TVA collectée 20%			FAC-2025-0847	20251003	Vente marchandises Durand Frères - Lot A42	0,00	3125,00			20251015
+VE	Ventes	VE-2025-0802	20251010	411002	Clients - Établissements Martin SA	CLI002	Établissements Martin SA	FAC-2025-0848	20251010	Vente équipements Martin SA - Commande 2025-198	27600,00	0,00			20251020
+VE	Ventes	VE-2025-0802	20251010	701000	Ventes de produits finis			FAC-2025-0848	20251010	Vente équipements Martin SA - Commande 2025-198	0,00	23000,00			20251020
+VE	Ventes	VE-2025-0802	20251010	445710	TVA collectée 20%			FAC-2025-0848	20251010	Vente équipements Martin SA - Commande 2025-198	0,00	4600,00			20251020
+VE	Ventes	VE-2025-0803	20251022	411003	Clients - Groupe Lefèvre & Cie	CLI003	Groupe Lefèvre & Cie	FAC-2025-0849	20251022	Vente produits divers Lefèvre - Réf. PD-445	9360,00	0,00			20251031
+VE	Ventes	VE-2025-0803	20251022	707000	Ventes de marchandises			FAC-2025-0849	20251022	Vente produits divers Lefèvre - Réf. PD-445	0,00	7800,00			20251031
+VE	Ventes	VE-2025-0803	20251022	445710	TVA collectée 20%			FAC-2025-0849	20251022	Vente produits divers Lefèvre - Réf. PD-445	0,00	1560,00			20251031
+VE	Ventes	VE-2025-0804	20251105	411004	Clients - SARL Petit & Fils	CLI004	SARL Petit & Fils	FAC-2025-0850	20251105	Vente fournitures industrielles Petit - Cde 1547	34200,00	0,00			20251115
+VE	Ventes	VE-2025-0804	20251105	701000	Ventes de produits finis			FAC-2025-0850	20251105	Vente fournitures industrielles Petit - Cde 1547	0,00	28500,00			20251115
+VE	Ventes	VE-2025-0804	20251105	445710	TVA collectée 20%			FAC-2025-0850	20251105	Vente fournitures industrielles Petit - Cde 1547	0,00	5700,00			20251115
+VE	Ventes	VE-2025-0805	20251118	411005	Clients - SAS Moreau Industries	CLI005	SAS Moreau Industries	FAC-2025-0851	20251118	Vente matériel technique Moreau - Projet MR-2025	42000,00	0,00			20251130
+VE	Ventes	VE-2025-0805	20251118	701000	Ventes de produits finis			FAC-2025-0851	20251118	Vente matériel technique Moreau - Projet MR-2025	0,00	35000,00			20251130
+VE	Ventes	VE-2025-0805	20251118	445710	TVA collectée 20%			FAC-2025-0851	20251118	Vente matériel technique Moreau - Projet MR-2025	0,00	7000,00			20251130
+VE	Ventes	VE-2025-0806	20251202	411006	Clients - Ets Bernard & Associés	CLI006	Ets Bernard & Associés	FAC-2025-0852	20251202	Vente composants Bernard - Lot C78	15000,00	0,00			20251215
+VE	Ventes	VE-2025-0806	20251202	707000	Ventes de marchandises			FAC-2025-0852	20251202	Vente composants Bernard - Lot C78	0,00	12500,00			20251215
+VE	Ventes	VE-2025-0806	20251202	445710	TVA collectée 20%			FAC-2025-0852	20251202	Vente composants Bernard - Lot C78	0,00	2500,00			20251215
+VE	Ventes	VE-2025-0807	20251215	411007	Clients - SA Girard Distribution	CLI007	SA Girard Distribution	FAC-2025-0853	20251215	Vente stock fin d'année Girard - Réf. SFA-12	8400,00	0,00			20251231
+VE	Ventes	VE-2025-0807	20251215	707000	Ventes de marchandises			FAC-2025-0853	20251215	Vente stock fin d'année Girard - Réf. SFA-12	0,00	7000,00			20251231
+VE	Ventes	VE-2025-0807	20251215	445710	TVA collectée 20%			FAC-2025-0853	20251215	Vente stock fin d'année Girard - Réf. SFA-12	0,00	1400,00			20251231
+VE	Ventes	VE-2025-0808	20251228	411008	Clients - SARL Dubois Commerce	CLI008	SARL Dubois Commerce	FAC-2025-0854	20251228	Vente équipements Dubois - Commande urgente DC-99	21600,00	0,00			20251231
+VE	Ventes	VE-2025-0808	20251228	701000	Ventes de produits finis			FAC-2025-0854	20251228	Vente équipements Dubois - Commande urgente DC-99	0,00	18000,00			20251231
+VE	Ventes	VE-2025-0808	20251228	445710	TVA collectée 20%			FAC-2025-0854	20251228	Vente équipements Dubois - Commande urgente DC-99	0,00	3600,00			20251231
+VE	Ventes	VE-2025-0809	20251230	411009	Clients - Groupe Roux International	CLI009	Groupe Roux International	FAC-2025-0855	20251230	Vente produits export Roux - Lot EXP-2025-44	56400,00	0,00			20251231
+VE	Ventes	VE-2025-0809	20251230	701000	Ventes de produits finis			FAC-2025-0855	20251230	Vente produits export Roux - Lot EXP-2025-44	0,00	47000,00			20251231
+VE	Ventes	VE-2025-0809	20251230	445710	TVA collectée 20%			FAC-2025-0855	20251230	Vente produits export Roux - Lot EXP-2025-44	0,00	9400,00			20251231

@@ -137,7 +137,7 @@ export function getAnalyzeUrl(): string {
  * ```
  */
 export function getStatusUrl(analysisId: string): string {
-  return `${N8N_WEBHOOK_ROOT}/f38b7e23-0d26-4439-92d7-cb89922cf2c5/sofia/missions/analyze/${encodeURIComponent(analysisId)}/status`;
+  return `${N8N_WEBHOOK_ROOT}/e346d7bf-a57d-497c-b49f-39ecd88bdb92/sofia/missions/analyze/${encodeURIComponent(analysisId)}/status`;
 }
 
 /**

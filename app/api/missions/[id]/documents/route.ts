@@ -195,6 +195,7 @@ export async function POST(
       .from('documents')
       .insert({
         mission_id: missionId,
+        license_id: session.license_id,
         type: docType,
         filename: file.name,
         storage_path: storagePath,

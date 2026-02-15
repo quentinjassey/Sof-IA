@@ -48,3 +48,4 @@ next-env.d.ts
 Thumbs.db
 .claude-mcp.json
 env.local
+.mcp.json

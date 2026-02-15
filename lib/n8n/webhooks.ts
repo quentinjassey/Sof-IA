@@ -14,6 +14,13 @@
  */
 const N8N_BASE_URL = process.env.N8N_BASE_URL || 'https://n8n.agence-b.fr/webhook/sofia';
 
+/**
+ * Base URL for N8N webhooks that use production UUIDs.
+ * Some N8N workflows expose production webhooks with a UUID prefix
+ * instead of the /sofia namespace.
+ */
+const N8N_WEBHOOK_ROOT = 'https://n8n.agence-b.fr/webhook';
+
 // -----------------------------------------------------------------------------
 // Webhook endpoint paths (relative to N8N_BASE_URL)
 // -----------------------------------------------------------------------------
@@ -55,10 +62,12 @@ export const N8N_ENDPOINTS = {
    * Poll the progress of a running analysis.
    * WF-07: Status polling endpoint
    *
+   * Uses a dedicated N8N production webhook UUID prefix.
+   *
    * Returns progress with step number, percentage, and message.
    * When status is 'completed', includes a results_summary.
    */
-  STATUS: '/missions/analyze/:analysisId/status',
+  STATUS: '/f38b7e23-0d26-4439-92d7-cb89922cf2c5/sofia/missions/analyze/:analysisId/status',
 
   /**
    * GET /missions/analyze/{analysis_id}/results
@@ -116,17 +125,19 @@ export function getAnalyzeUrl(): string {
 /**
  * Constructs the full URL for polling analysis status.
  *
+ * Uses the dedicated N8N production webhook UUID for the status endpoint.
+ *
  * @param analysisId - The UUID of the analysis to check
- * @returns Full URL: {N8N_BASE_URL}/missions/analyze/{analysisId}/status
+ * @returns Full URL: {N8N_WEBHOOK_ROOT}/f38b7e23-.../sofia/missions/analyze/{analysisId}/status
  *
  * @example
  * ```typescript
  * const url = getStatusUrl('550e8400-e29b-41d4-a716-446655440000');
- * // => "https://n8n.agence-b.fr/webhook/sofia/missions/analyze/550e8400-e29b-41d4-a716-446655440000/status"
+ * // => "https://n8n.agence-b.fr/webhook/f38b7e23-0d26-4439-92d7-cb89922cf2c5/sofia/missions/analyze/550e8400-e29b-41d4-a716-446655440000/status"
  * ```
  */
 export function getStatusUrl(analysisId: string): string {
-  return `${N8N_BASE_URL}/missions/analyze/${encodeURIComponent(analysisId)}/status`;
+  return `${N8N_WEBHOOK_ROOT}/f38b7e23-0d26-4439-92d7-cb89922cf2c5/sofia/missions/analyze/${encodeURIComponent(analysisId)}/status`;
 }
 
 /**

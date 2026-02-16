@@ -169,7 +169,7 @@ const DETECTION_METHODS: Record<string, string> = {
  * Enrichit chaque signal avec une explication LLM de son score de confiance.
  * Non bloquant : si le LLM échoue, le signal conserve son score sans explication.
  */
-async function enrichWithConfidenceExplanations(signals: SignalInsert[]): Promise<void> {
+export async function enrichWithConfidenceExplanations(signals: SignalInsert[]): Promise<void> {
   if (signals.length === 0) {
     console.log('[Pointage] [LLM] Aucun signal à enrichir — LLM non appelé.')
     return
@@ -234,7 +234,7 @@ function fmt(n: number): string {
   return (n < 0 ? '-' : '') + result.join('')
 }
 
-async function detectSignals(company: PointageCompany, missionId: string, licenseId: string): Promise<SignalInsert[]> {
+export async function detectSignals(company: PointageCompany, missionId: string, licenseId: string): Promise<SignalInsert[]> {
   const signals: SignalInsert[] = []
 
   // PTG-001 : Écart montant bilan / annexe (immobilisations corporelles)
@@ -637,7 +637,7 @@ async function evaluateSufficiency(
 // Completeness
 // -----------------------------------------------------------------------------
 
-function buildCompleteness(missionId: string, licenseId: string): CompletenessInsert[] {
+export function buildCompleteness(missionId: string, licenseId: string): CompletenessInsert[] {
   return [
     {
       mission_id: missionId,

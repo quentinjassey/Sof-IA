@@ -19,6 +19,7 @@ import {
 } from '@/lib/auth/helpers'
 import type { ScenarioType, SignalPriority } from '@/types/database'
 import { analyzePointageMission } from '@/lib/services/pointage-analyzer'
+import { hasRealPdfUploads, analyzePointageFromRealPdfs } from '@/lib/services/pointage-real-analyzer'
 
 // ---------------------------------------------------------------
 // POST /api/missions/[id]/analysis — Launch pre-analysis
@@ -86,58 +87,86 @@ export async function POST(
   }
 
   // --- POINTAGE BYPASS: Local analysis without N8N ---
-  if (mission.scenario === 'pointage' && mission.company_id) {
-    // Update status to analyzing
-    await supabase
-      .from('missions')
-      .update({ status: 'analyzing', updated_at: new Date().toISOString() })
-      .eq('id', missionId)
+  if (mission.scenario === 'pointage') {
+    // Detect if real PDFs were uploaded (vs demo documents)
+    const isRealPdfs = await hasRealPdfUploads(supabase, missionId)
 
-    // Create trace: analysis_started
-    const actorNamePointage = await getActorName(session.license_id)
-    await createTrace({
-      mission_id: missionId,
-      license_id: session.license_id,
-      actor: 'user',
-      actor_name: actorNamePointage,
-      action: 'analysis_started',
-      target_type: 'mission',
-      target_id: missionId,
-      details: `Pre-analyse lancee sur ${documents?.length || 0} document(s) — Scenario : pointage (analyse locale)`,
-    })
-
-    try {
-      const result = await analyzePointageMission(
-        supabase,
-        missionId,
-        session.license_id,
-        mission.company_id
-      )
-
-      return successResponse(
-        {
-          analysis_id: missionId,
-          status: 'analyzed' as const,
-          signals_count: result.signals_count,
-          company_name: result.company_name,
-        },
-        200
-      )
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erreur inconnue'
-      console.error('Erreur analyse pointage locale:', errorMessage)
-
+    if (isRealPdfs || mission.company_id) {
+      // Update status to analyzing
       await supabase
         .from('missions')
-        .update({ status: 'analysis_failed', updated_at: new Date().toISOString() })
+        .update({ status: 'analyzing', updated_at: new Date().toISOString() })
         .eq('id', missionId)
 
-      return errorResponse(
-        'Erreur lors de la pre-analyse locale des etats financiers.',
-        'ANALYSIS_FAILED',
-        500
-      )
+      // Create trace: analysis_started
+      const actorNamePointage = await getActorName(session.license_id)
+      const analysisMode = isRealPdfs ? 'documents réels (extraction PDF + IA)' : 'données fictives'
+      await createTrace({
+        mission_id: missionId,
+        license_id: session.license_id,
+        actor: 'user',
+        actor_name: actorNamePointage,
+        action: 'analysis_started',
+        target_type: 'mission',
+        target_id: missionId,
+        details: `Pre-analyse lancee sur ${documents?.length || 0} document(s) — Scenario : pointage (${analysisMode})`,
+      })
+
+      try {
+        let result
+
+        if (isRealPdfs) {
+          // New: Real PDF extraction + LLM structuring
+          console.log('[Analysis] Vrais PDFs détectés — lancement extraction PDF + LLM...')
+          result = await analyzePointageFromRealPdfs(
+            supabase,
+            missionId,
+            session.license_id
+          )
+        } else {
+          // Existing: Fictional company data
+          result = await analyzePointageMission(
+            supabase,
+            missionId,
+            session.license_id,
+            mission.company_id!
+          )
+        }
+
+        return successResponse(
+          {
+            analysis_id: missionId,
+            status: 'analyzed' as const,
+            signals_count: result.signals_count,
+            company_name: result.company_name,
+          },
+          200
+        )
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Erreur inconnue'
+        console.error('Erreur analyse pointage locale:', errorMessage)
+
+        await supabase
+          .from('missions')
+          .update({ status: 'analysis_failed', updated_at: new Date().toISOString() })
+          .eq('id', missionId)
+
+        return errorResponse(
+          isRealPdfs
+            ? `Erreur lors de la pre-analyse des documents PDF : ${errorMessage}`
+            : 'Erreur lors de la pre-analyse locale des etats financiers.',
+          'ANALYSIS_FAILED',
+          500
+        )
+      }
     }
+
+    // Pointage mission without real PDFs and without company_id — cannot analyze
+    return errorResponse(
+      'Aucune donnée disponible pour la pré-analyse. Uploadez des documents PDF ou sélectionnez une entreprise démo.',
+      'VALIDATION_ERROR',
+      400
+    )
   }
 
   // --- STANDARD N8N ANALYSIS (sondage_ca, cutoff) ---

@@ -8,6 +8,7 @@ import {
   Clock,
   FileQuestion,
   ChevronRight,
+  ShieldCheck,
 } from 'lucide-react'
 import { Badge } from '@/components/ui/Badge'
 import { cn } from '@/lib/utils'
@@ -25,12 +26,12 @@ const signalTypeIcons: Record<SignalType, React.ReactNode> = {
 
 // Map signal types to French labels
 const signalTypeLabels: Record<SignalType, string> = {
-  absence_piece: 'Piece justificative manquante',
-  incoherence_date: 'Incoherence de dates',
-  incoherence_montant: 'Ecart de montant',
-  rupture_chaine: 'Rupture de la chaine documentaire',
+  absence_piece: 'Pièce justificative manquante',
+  incoherence_date: 'Incohérence de dates',
+  incoherence_montant: 'Écart de montant',
+  rupture_chaine: 'Rupture de la chaîne documentaire',
   rattachement_temporel: 'Doute sur le rattachement temporel',
-  incompletude: 'Information incomplete',
+  incompletude: 'Information incomplète',
 }
 
 // Map priorities to badge variants
@@ -41,7 +42,7 @@ const priorityVariantMap: Record<SignalPriority, 'priority-high' | 'priority-med
 }
 
 const priorityLabels: Record<SignalPriority, string> = {
-  high: 'Elevee',
+  high: 'Élevée',
   medium: 'Moyenne',
   low: 'Faible',
 }
@@ -56,9 +57,9 @@ const decisionVariantMap: Record<HumanDecision, 'pending' | 'validated' | 'rejec
 
 const decisionLabels: Record<HumanDecision, string> = {
   pending: 'En attente',
-  validated: 'Valide',
-  rejected: 'Rejete',
-  to_investigate: 'A approfondir',
+  validated: 'Validé',
+  rejected: 'Rejeté',
+  to_investigate: 'À approfondir',
 }
 
 interface SignalCardProps {
@@ -100,6 +101,21 @@ export default function SignalCard({ signal, index, onClick }: SignalCardProps) 
           <Badge variant={decisionVariantMap[signal.human_decision]}>
             {decisionLabels[signal.human_decision]}
           </Badge>
+          {signal.confidence_score != null && (
+            <span
+              className={cn(
+                'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium',
+                signal.confidence_score >= 90
+                  ? 'bg-primary/10 text-primary'
+                  : signal.confidence_score >= 75
+                    ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
+                    : 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+              )}
+            >
+              <ShieldCheck className="h-3 w-3" />
+              {signal.confidence_score}%
+            </span>
+          )}
         </div>
         <p className="mt-0.5 truncate text-sm text-muted-foreground">
           {signal.description}

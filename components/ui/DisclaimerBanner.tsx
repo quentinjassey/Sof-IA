@@ -17,7 +17,7 @@ export default function DisclaimerBanner({ className }: DisclaimerBannerProps) {
     >
       <AlertTriangle className="mt-0.5 size-5 shrink-0 text-amber-600" />
       <p className="text-sm text-amber-800">
-        <span className="font-semibold">Analyse automatique</span> — a valider
+        <span className="font-semibold">Analyse automatique</span> — à valider
         par le commissaire aux comptes.{" "}
         Sof&apos;IA ne se substitue pas au jugement professionnel.
       </p>

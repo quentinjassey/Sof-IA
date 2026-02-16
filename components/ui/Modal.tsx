@@ -10,7 +10,8 @@ export interface ModalProps {
   title?: string
   children: React.ReactNode
   footer?: React.ReactNode
-  size?: "sm" | "md" | "lg" | "xl"
+  size?: "sm" | "md" | "lg" | "xl" | "full"
+  noPadding?: boolean
   closeOnOverlay?: boolean
   showCloseButton?: boolean
 }
@@ -20,6 +21,7 @@ const sizeClasses: Record<NonNullable<ModalProps["size"]>, string> = {
   md: "max-w-lg",
   lg: "max-w-2xl",
   xl: "max-w-4xl",
+  full: "max-w-[92vw] max-h-[92vh]",
 }
 
 function Modal({
@@ -29,6 +31,7 @@ function Modal({
   children,
   footer,
   size = "md",
+  noPadding = false,
   closeOnOverlay = true,
   showCloseButton = true,
 }: ModalProps) {
@@ -135,7 +138,7 @@ function Modal({
         )}
 
         {/* Body */}
-        <div className="px-6 py-4 overflow-y-auto flex-1">{children}</div>
+        <div className={cn("overflow-y-auto flex-1", noPadding ? "p-0" : "px-6 py-4")}>{children}</div>
 
         {/* Footer */}
         {footer && (

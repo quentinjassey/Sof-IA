@@ -6,20 +6,23 @@
 // =============================================================================
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-explicit-any
-const PdfPrinter = require('pdfmake') as any
+const PdfPrinter = require('pdfmake/src/printer') as any
+import path from 'path'
 import type { TDocumentDefinitions, Content, TableCell } from 'pdfmake/interfaces'
 import type { Signal, Profile, Mission, Completeness } from '@/types/database'
+import { generateSynthesisNarrative } from '@/lib/llm/openrouter'
 
 // -----------------------------------------------------------------------------
-// Fonts configuration
+// Fonts configuration (Roboto TTFs extracted from pdfmake vfs_fonts.js)
 // -----------------------------------------------------------------------------
 
+const fontDir = path.join(process.cwd(), 'fonts')
 const fonts = {
   Roboto: {
-    normal: 'node_modules/pdfmake/build/vfs_fonts.js',
-    bold: 'node_modules/pdfmake/build/vfs_fonts.js',
-    italics: 'node_modules/pdfmake/build/vfs_fonts.js',
-    bolditalics: 'node_modules/pdfmake/build/vfs_fonts.js',
+    normal: path.join(fontDir, 'Roboto-Regular.ttf'),
+    bold: path.join(fontDir, 'Roboto-Medium.ttf'),
+    italics: path.join(fontDir, 'Roboto-Italic.ttf'),
+    bolditalics: path.join(fontDir, 'Roboto-MediumItalic.ttf'),
   },
 }
 
@@ -115,6 +118,39 @@ export async function generateSynthesisPdf(
       return priorityOrder[a.priority] - priorityOrder[b.priority]
     })
     .slice(0, 5)
+
+  // Generate LLM narrative for Section 2 (non-blocking, fallback to empty)
+  let narrativeParagraph = ''
+  try {
+    const apiKey = process.env.OPENROUTER_API_KEY
+    if (apiKey && apiKey !== '<YOUR_OPENROUTER_API_KEY>') {
+      console.log('[Synthese] [LLM] Generation du narratif de synthese...')
+      const start = Date.now()
+      narrativeParagraph = await generateSynthesisNarrative({
+        mission_name: mission.name,
+        scenario: SCENARIO_LABELS[mission.scenario] || mission.scenario,
+        company_name: mission.name,
+        signals: signals.map((s) => ({
+          rule: s.rule_triggered || '',
+          description: s.description,
+          priority: s.priority,
+          type: SIGNAL_TYPE_LABELS[s.type] || s.type,
+        })),
+        completeness: completeness.map((c) => ({
+          label: c.label,
+          status: STATUS_LABELS[c.status] || c.status,
+          count: c.count,
+        })),
+      })
+      const elapsed = Date.now() - start
+      console.log(`[Synthese] [LLM] ✓ Narratif genere (${narrativeParagraph.length} car., ${elapsed} ms)`)
+    } else {
+      console.log('[Synthese] [LLM] OPENROUTER_API_KEY non configuree — narratif LLM desactive.')
+    }
+  } catch (err) {
+    const reason = err instanceof Error ? err.message : String(err)
+    console.warn(`[Synthese] [LLM] ✗ Echec generation narratif, section structuree uniquement : ${reason}`)
+  }
 
   // Build documents analyzed table
   const docsTableBody: TableCell[][] = [
@@ -295,6 +331,18 @@ export async function generateSynthesisPdf(
         style: 'bodyText',
         margin: [15, 0, 0, 10],
       } as Content,
+
+      // LLM narrative paragraph (if available)
+      ...(narrativeParagraph
+        ? [
+            {
+              text: narrativeParagraph,
+              style: 'bodyText',
+              italics: true,
+              margin: [0, 5, 0, 10] as [number, number, number, number],
+            } as Content,
+          ]
+        : []),
 
       // Breakdown by type
       ...(signalTypeSummary.length > 0

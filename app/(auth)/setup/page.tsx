@@ -24,7 +24,7 @@ const FIELDS = [
   {
     key: 'cabinet' as const,
     label: 'Nom du cabinet',
-    placeholder: 'Cabinet Dupont & Associes',
+    placeholder: 'Cabinet Dupont & Associés',
     icon: Building2,
     required: true,
     type: 'text',
@@ -100,7 +100,7 @@ export default function SetupPage() {
 
       if (!res.ok || json.error) {
         setError(
-          json.error || 'Une erreur est survenue lors de la creation du profil.'
+          json.error || 'Une erreur est survenue lors de la création du profil.'
         )
         return
       }
@@ -108,7 +108,7 @@ export default function SetupPage() {
       router.push('/missions')
     } catch {
       setError(
-        'Impossible de contacter le serveur. Verifiez votre connexion.'
+        'Impossible de contacter le serveur. Vérifiez votre connexion.'
       )
     } finally {
       setIsLoading(false)
@@ -129,13 +129,13 @@ export default function SetupPage() {
       <div className="mb-8 text-center">
         <div className="mx-auto mb-3 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1">
           <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-          <span className="text-xs font-medium text-primary">Etape 2/2</span>
+          <span className="text-xs font-medium text-primary">Étape 2/2</span>
         </div>
         <h2 className="font-serif text-xl text-card-foreground">
           Profil professionnel
         </h2>
         <p className="mt-1.5 text-sm text-muted-foreground">
-          Vos informations apparaitront dans les livrables d&apos;audit
+          Vos informations apparaîtront dans les livrables d&apos;audit
         </p>
       </div>
 
@@ -208,8 +208,8 @@ export default function SetupPage() {
       </div>
 
       <p className="mt-6 text-center text-[11px] leading-relaxed text-muted-foreground/50">
-        Les champs marques * sont obligatoires.
-        Ces donnees seront integrees a vos livrables d&apos;audit.
+        Les champs marqués * sont obligatoires.
+        Ces données seront intégrées à vos livrables d&apos;audit.
       </p>
     </div>
   )

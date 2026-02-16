@@ -13,10 +13,13 @@ import {
   Play,
   FolderOpen,
   RefreshCw,
+  Database,
+  Eye,
 } from 'lucide-react'
 import DisclaimerBanner from '@/components/ui/DisclaimerBanner'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
+import { PdfPreviewModal } from '@/components/ui/PdfPreviewModal'
 import { cn } from '@/lib/utils'
 
 // --- Types ---
@@ -46,6 +49,7 @@ interface MissionData {
   name: string
   scenario: string
   status: string
+  company_id?: string | null
 }
 
 // --- Helper ---
@@ -63,7 +67,7 @@ function statusBadge(status: string) {
       return (
         <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2.5 py-0.5 text-xs font-medium text-success">
           <CheckCircle className="h-3 w-3" />
-          Present
+          Présent
         </span>
       )
     case 'missing':
@@ -97,7 +101,7 @@ const documentTypeLabels: Record<string, string> = {
   contrat: 'Contrat',
   annexe: 'Annexe',
   bilan: 'Bilan',
-  compte_resultat: 'Compte de resultat',
+  compte_resultat: 'Compte de résultat',
   autre: 'Autre',
 }
 
@@ -118,8 +122,10 @@ export default function DocumentsPage({
   const [uploading, setUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [launchingAnalysis, setLaunchingAnalysis] = useState(false)
+  const [loadingDemo, setLoadingDemo] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [dragOver, setDragOver] = useState(false)
+  const [previewDoc, setPreviewDoc] = useState<UploadedDocument | null>(null)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -146,7 +152,7 @@ export default function DocumentsPage({
         setCompleteness(Array.isArray(compJson.data) ? compJson.data : [])
       }
     } catch {
-      setError('Erreur lors du chargement des donnees.')
+      setError('Erreur lors du chargement des données.')
     } finally {
       setLoading(false)
     }
@@ -276,6 +282,31 @@ export default function DocumentsPage({
     }
   }
 
+  // --- Load Demo Documents (pointage only) ---
+
+  async function handleLoadDemo() {
+    setLoadingDemo(true)
+    setError(null)
+
+    try {
+      const res = await fetch(`/api/missions/${missionId}/documents/demo`, {
+        method: 'POST',
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Erreur lors du chargement des documents de démonstration.')
+      }
+
+      // Refresh data
+      await fetchData()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur lors du chargement.')
+    } finally {
+      setLoadingDemo(false)
+    }
+  }
+
   // --- Completeness stats ---
 
   const requiredEntries = completeness.filter((c) => c.required)
@@ -300,7 +331,7 @@ export default function DocumentsPage({
         <h1 className="font-serif text-2xl font-bold text-foreground">Documents de la mission</h1>
         {mission && (
           <p className="mt-1 text-sm text-muted-foreground">
-            {mission.name} — {mission.scenario === 'sondage_ca' ? 'Sondage sur le chiffre d\'affaires' : mission.scenario === 'cutoff' ? 'Cesure d\'exercice (cut-off)' : 'Pointage des etats financiers'}
+            {mission.name} — {mission.scenario === 'sondage_ca' ? 'Sondage sur le chiffre d\'affaires' : mission.scenario === 'cutoff' ? 'Césure d\'exercice (cut-off)' : 'Pointage des états financiers'}
           </p>
         )}
       </div>
@@ -314,10 +345,10 @@ export default function DocumentsPage({
             <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-destructive" />
             <div className="flex-1">
               <p className="text-sm font-medium text-destructive">
-                Echec de la pre-analyse
+                Échec de la pré-analyse
               </p>
               <p className="mt-1 text-sm text-destructive/80">
-                La pre-analyse a echoue. Veuillez reessayer.
+                La pré-analyse a échoué. Veuillez réessayer.
               </p>
               <Button
                 variant="primary"
@@ -328,7 +359,7 @@ export default function DocumentsPage({
                 disabled={documents.length === 0 || launchingAnalysis}
                 iconLeft={<RefreshCw className="h-3.5 w-3.5" />}
               >
-                Relancer la pre-analyse
+                Relancer la pré-analyse
               </Button>
             </div>
           </div>
@@ -342,10 +373,10 @@ export default function DocumentsPage({
             <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-destructive" />
             <div className="flex-1">
               <p className="text-sm font-medium text-destructive">
-                Echec de l&apos;envoi des documents
+                Échec de l&apos;envoi des documents
               </p>
               <p className="mt-1 text-sm text-destructive/80">
-                L&apos;envoi des documents a echoue. Veuillez reessayer.
+                L&apos;envoi des documents a échoué. Veuillez réessayer.
               </p>
               <Button
                 variant="primary"
@@ -356,7 +387,7 @@ export default function DocumentsPage({
                 disabled={documents.length === 0 || launchingAnalysis}
                 iconLeft={<RefreshCw className="h-3.5 w-3.5" />}
               >
-                Relancer la pre-analyse
+                Relancer la pré-analyse
               </Button>
             </div>
           </div>
@@ -397,9 +428,33 @@ export default function DocumentsPage({
           Glissez vos documents ici
         </p>
         <p className="mt-1 text-xs text-muted-foreground">
-          ou cliquez pour selectionner — Formats acceptes : .txt (FEC), .pdf
+          ou cliquez pour sélectionner — Formats acceptés : .txt (FEC), .pdf
         </p>
       </div>
+
+      {/* Demo Documents Button (pointage only) */}
+      {mission?.scenario === 'pointage' && mission?.company_id && documents.length === 0 && (
+        <div className="rounded-2xl border border-primary/20 bg-primary/[0.03] px-5 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-card-foreground">Documents de démonstration</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Charger automatiquement le bilan, le compte de résultat et l&apos;annexe pour cette entreprise.
+              </p>
+            </div>
+            <Button
+              variant="secondary"
+              size="md"
+              onClick={handleLoadDemo}
+              disabled={loadingDemo}
+              loading={loadingDemo}
+              iconLeft={<Database className="h-4 w-4" />}
+            >
+              {loadingDemo ? 'Chargement...' : 'Charger les documents'}
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Upload Progress */}
       {uploading && (
@@ -422,7 +477,7 @@ export default function DocumentsPage({
         <div className="rounded-2xl border border-border bg-card">
           <div className="border-b border-border px-5 py-3">
             <div className="flex items-center justify-between">
-              <h2 className="font-serif text-sm font-semibold text-card-foreground">Completude documentaire</h2>
+              <h2 className="font-serif text-sm font-semibold text-card-foreground">Complétude documentaire</h2>
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground">
                   {presentRequired}/{totalRequired} requis
@@ -454,7 +509,7 @@ export default function DocumentsPage({
                 <tr className="border-b border-border bg-muted">
                   <th className="px-5 py-2.5 text-left font-medium text-muted-foreground">Document</th>
                   <th className="px-5 py-2.5 text-center font-medium text-muted-foreground">Requis</th>
-                  <th className="px-5 py-2.5 text-center font-medium text-muted-foreground">Recu(s)</th>
+                  <th className="px-5 py-2.5 text-center font-medium text-muted-foreground">Reçu(s)</th>
                   <th className="px-5 py-2.5 text-center font-medium text-muted-foreground">Statut</th>
                 </tr>
               </thead>
@@ -484,7 +539,7 @@ export default function DocumentsPage({
         <div className="rounded-2xl border border-border bg-card">
           <div className="border-b border-border px-5 py-3">
             <h2 className="font-serif text-sm font-semibold text-card-foreground">
-              Documents envoyes ({documents.length})
+              Documents envoyés ({documents.length})
             </h2>
           </div>
 
@@ -500,13 +555,24 @@ export default function DocumentsPage({
                     </p>
                   </div>
                 </div>
-                <button
-                  onClick={() => handleDelete(doc.id)}
-                  className="rounded-xl p-1.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
-                  title="Supprimer"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
+                <div className="flex items-center gap-1">
+                  {doc.filename?.toLowerCase().endsWith('.pdf') && (
+                    <button
+                      onClick={() => setPreviewDoc(doc)}
+                      className="rounded-xl p-1.5 text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
+                      title="Aperçu"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </button>
+                  )}
+                  <button
+                    onClick={() => handleDelete(doc.id)}
+                    className="rounded-xl p-1.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                    title="Supprimer"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
               </li>
             ))}
           </ul>
@@ -517,7 +583,7 @@ export default function DocumentsPage({
       {documents.length === 0 && !loading && (
         <div className="rounded-2xl border border-border bg-card px-6 py-10 text-center">
           <FolderOpen className="mx-auto h-10 w-10 text-muted-foreground/50" />
-          <p className="mt-3 text-sm font-medium text-muted-foreground">Aucun document envoye</p>
+          <p className="mt-3 text-sm font-medium text-muted-foreground">Aucun document envoyé</p>
           <p className="mt-1 text-xs text-muted-foreground/70">
             Glissez vos fichiers dans la zone ci-dessus pour commencer.
           </p>
@@ -528,9 +594,9 @@ export default function DocumentsPage({
       <div className="rounded-2xl border border-border bg-card px-5 py-4">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium text-card-foreground">Lancer la pre-analyse</p>
+            <p className="text-sm font-medium text-card-foreground">Lancer la pré-analyse</p>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              Les documents seront envoyes temporairement au serveur pour traitement, puis supprimes.
+              Les documents seront envoyés temporairement au serveur pour traitement, puis supprimés.
             </p>
           </div>
           <Button
@@ -541,10 +607,20 @@ export default function DocumentsPage({
             loading={launchingAnalysis}
             iconLeft={<Play className="h-4 w-4" />}
           >
-            Lancer la pre-analyse
+            Lancer la pré-analyse
           </Button>
         </div>
       </div>
+
+      {/* PDF Preview Modal */}
+      {previewDoc && (
+        <PdfPreviewModal
+          isOpen={!!previewDoc}
+          onClose={() => setPreviewDoc(null)}
+          title={previewDoc.filename}
+          pdfUrl={`/api/missions/${missionId}/documents/${previewDoc.id}/preview`}
+        />
+      )}
     </div>
   )
 }

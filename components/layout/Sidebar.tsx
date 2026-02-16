@@ -30,7 +30,7 @@ const mainNavItems: NavItem[] = [
     icon: <FolderOpen className="h-[18px] w-[18px]" />,
   },
   {
-    label: 'Parametres',
+    label: 'Paramètres',
     href: '/settings',
     icon: <SettingsIcon className="h-[18px] w-[18px]" />,
   },
@@ -59,7 +59,7 @@ function getMissionSubNav(missionId: string): NavItem[] {
       icon: <FileCheck className="h-4 w-4" />,
     },
     {
-      label: 'Tracabilite',
+      label: 'Traçabilité',
       href: `/missions/${missionId}/traces`,
       icon: <Clock className="h-4 w-4" />,
     },
@@ -184,7 +184,7 @@ export default function Sidebar() {
             POC HackAudit 2026
           </p>
           <p className="mt-0.5 px-3 text-[10px] text-muted-foreground/30">
-            Pre-analyse documentaire
+            Pré-analyse documentaire
           </p>
         </div>
       </nav>

@@ -17,6 +17,7 @@ import {
   ArrowRight,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { Building2 } from 'lucide-react'
 import type { Mission, ScenarioType, MissionStatus } from '@/types/database'
 
 interface ScenarioOption {
@@ -31,35 +32,35 @@ const SCENARIOS: ScenarioOption[] = [
     id: 'sondage_ca',
     label: 'Sondage sur le chiffre d\'affaires',
     description:
-      'Rapprochement des factures de vente avec les bons de livraison et les ecritures du FEC.',
+      'Rapprochement des factures de vente avec les bons de livraison et les écritures du FEC.',
     icon: <BarChart3 className="h-5 w-5" />,
   },
   {
     id: 'cutoff',
-    label: 'Cesure d\'exercice (cut-off)',
+    label: 'Césure d\'exercice (cut-off)',
     description:
-      'Verification du rattachement temporel des operations autour de la date de cloture.',
+      'Vérification du rattachement temporel des opérations autour de la date de clôture.',
     icon: <Scissors className="h-5 w-5" />,
   },
   {
     id: 'pointage',
-    label: 'Pointage etats financiers / annexe',
+    label: 'Pointage états financiers / annexe',
     description:
-      'Coherence entre le bilan, le compte de resultat et l\'annexe.',
+      'Cohérence entre le bilan, le compte de résultat et l\'annexe.',
     icon: <FileSearch className="h-5 w-5" />,
   },
 ]
 
 const STATUS_CONFIG: Record<MissionStatus, { label: string; className: string }> = {
-  created: { label: 'Creee', className: 'bg-muted text-muted-foreground' },
-  documents_ready: { label: 'Documents prets', className: 'bg-primary/10 text-primary' },
+  created: { label: 'Créée', className: 'bg-muted text-muted-foreground' },
+  documents_ready: { label: 'Documents prêts', className: 'bg-primary/10 text-primary' },
   uploading: { label: 'Envoi en cours', className: 'bg-primary/10 text-primary' },
-  upload_failed: { label: 'Echec envoi', className: 'bg-destructive/10 text-destructive' },
+  upload_failed: { label: 'Échec envoi', className: 'bg-destructive/10 text-destructive' },
   analyzing: { label: 'Analyse en cours', className: 'bg-primary/10 text-primary' },
-  analysis_failed: { label: 'Echec analyse', className: 'bg-destructive/10 text-destructive' },
-  analyzed: { label: 'Analysee', className: 'bg-success/10 text-success' },
+  analysis_failed: { label: 'Échec analyse', className: 'bg-destructive/10 text-destructive' },
+  analyzed: { label: 'Analysée', className: 'bg-success/10 text-success' },
   in_review: { label: 'En revue', className: 'bg-warning/10 text-warning-foreground' },
-  completed: { label: 'Terminee', className: 'bg-success/10 text-success' },
+  completed: { label: 'Terminée', className: 'bg-success/10 text-success' },
 }
 
 const SCENARIO_LABELS: Record<ScenarioType, string> = {
@@ -129,7 +130,7 @@ export default function MissionsPage() {
 
   const handleCreate = useCallback(async () => {
     if (!missionName.trim() || !selectedScenario) {
-      setError('Veuillez renseigner le nom de la mission et selectionner un scenario.')
+      setError('Veuillez renseigner le nom de la mission et sélectionner un scénario.')
       return
     }
 
@@ -149,7 +150,7 @@ export default function MissionsPage() {
       const json = await res.json()
 
       if (!res.ok || json.error) {
-        setError(json.error || 'Erreur lors de la creation de la mission.')
+        setError(json.error || 'Erreur lors de la création de la mission.')
         return
       }
 
@@ -174,10 +175,10 @@ export default function MissionsPage() {
       <div className="mb-8 flex items-end justify-between">
         <div>
           <h1 className="font-serif text-2xl tracking-tight text-foreground">
-            Missions de pre-analyse
+            Missions de pré-analyse
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Gerez vos missions de pre-analyse documentaire
+            Gérez vos missions de pré-analyse documentaire
           </p>
         </div>
         {!showCreateForm && (
@@ -226,7 +227,7 @@ export default function MissionsPage() {
                 setMissionName(e.target.value)
                 if (error) setError(null)
               }}
-              placeholder="Audit Societe XYZ — Exercice 2025"
+              placeholder="Audit Société XYZ — Exercice 2025"
               className={cn(
                 "block w-full rounded-xl border border-input bg-background px-4 py-3 text-sm text-foreground",
                 "placeholder:text-muted-foreground/50",
@@ -239,7 +240,7 @@ export default function MissionsPage() {
           {/* Scenario selection */}
           <div className="mb-6">
             <label className="mb-3 block text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              Scenario de pre-analyse
+              Scénario de pré-analyse
             </label>
             <div className="grid gap-3 sm:grid-cols-3">
               {SCENARIOS.map((scenario) => {
@@ -315,11 +316,11 @@ export default function MissionsPage() {
               {isCreating ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Creation...
+                  Création...
                 </>
               ) : (
                 <>
-                  Creer la mission
+                  Créer la mission
                   <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                 </>
               )}
@@ -345,7 +346,7 @@ export default function MissionsPage() {
             Aucune mission
           </h3>
           <p className="mt-1 text-sm text-muted-foreground">
-            Creez votre premiere mission de pre-analyse
+            Créez votre première mission de pré-analyse
           </p>
           <button
             onClick={() => setShowCreateForm(true)}
@@ -409,6 +410,12 @@ export default function MissionsPage() {
                           <span className="font-medium text-secondary-foreground">
                             {SCENARIO_LABELS[mission.scenario]}
                           </span>
+                          {mission.company_id && (
+                            <span className="flex items-center gap-1">
+                              <Building2 className="h-3 w-3" />
+                              {mission.company_id.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
+                            </span>
+                          )}
                           <span className="flex items-center gap-1">
                             <Clock className="h-3 w-3" />
                             {formatDate(mission.created_at)}

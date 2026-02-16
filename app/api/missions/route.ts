@@ -12,6 +12,7 @@ import {
   successResponse,
 } from '@/lib/auth/helpers'
 import type { ScenarioType } from '@/types/database'
+import { getRandomCompany } from '@/lib/config/pointage-companies'
 
 // Valid scenario values
 const VALID_SCENARIOS: ScenarioType[] = ['sondage_ca', 'cutoff', 'pointage']
@@ -150,6 +151,13 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // For pointage scenario, assign a random company
+  let companyId: string | null = null
+  if (validScenario === 'pointage') {
+    const company = getRandomCompany()
+    companyId = company.id
+  }
+
   // Create the mission
   const now = new Date().toISOString()
   const missionInsert = {
@@ -157,6 +165,7 @@ export async function POST(req: NextRequest) {
     name: name.trim(),
     scenario: validScenario,
     status: 'created' as const,
+    company_id: companyId,
     created_at: now,
     updated_at: now,
     ...(description ? {} : {}), // description is not in the DB schema; it's ignored

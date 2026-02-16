@@ -14,7 +14,7 @@ export default function ActivatePage() {
   const handleActivate = useCallback(async () => {
     const trimmed = licenseKey.trim()
     if (!trimmed) {
-      setError('Veuillez saisir votre cle de licence.')
+      setError('Veuillez saisir votre clé de licence.')
       return
     }
 
@@ -32,9 +32,9 @@ export default function ActivatePage() {
 
       if (!res.ok || json.error) {
         const errorMessages: Record<string, string> = {
-          INVALID_KEY: 'Cle de licence invalide. Verifiez votre saisie.',
-          EXPIRED: 'Cette licence a expire. Contactez votre administrateur.',
-          REVOKED: 'Cette licence a ete revoquee. Contactez votre administrateur.',
+          INVALID_KEY: 'Clé de licence invalide. Vérifiez votre saisie.',
+          EXPIRED: 'Cette licence a expiré. Contactez votre administrateur.',
+          REVOKED: 'Cette licence a été révoquée. Contactez votre administrateur.',
         }
         setError(
           errorMessages[json.code] ||
@@ -56,7 +56,7 @@ export default function ActivatePage() {
       router.push('/setup')
     } catch {
       setError(
-        'Impossible de contacter le serveur. Verifiez votre connexion.'
+        'Impossible de contacter le serveur. Vérifiez votre connexion.'
       )
     } finally {
       setIsLoading(false)
@@ -82,7 +82,7 @@ export default function ActivatePage() {
           Activez votre licence
         </h2>
         <p className="mt-1.5 text-sm text-muted-foreground">
-          Saisissez la cle fournie pour acceder a Sof&apos;IA
+          Saisissez la clé fournie pour accéder à Sof&apos;IA
         </p>
       </div>
 
@@ -92,7 +92,7 @@ export default function ActivatePage() {
             htmlFor="license-key"
             className="mb-2 block text-xs font-medium uppercase tracking-wider text-muted-foreground"
           >
-            Cle de licence
+            Clé de licence
           </label>
           <input
             id="license-key"

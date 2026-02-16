@@ -55,27 +55,27 @@ function Badge({ className, variant, icon, children, ...props }: BadgeProps) {
 }
 
 /**
- * Labels en francais pour les badges de decision
+ * Labels en français pour les badges de décision
  */
 const decisionLabels: Record<string, string> = {
   pending: "En attente",
-  validated: "Valide",
-  rejected: "Rejete",
-  "to-investigate": "A approfondir",
+  validated: "Validé",
+  rejected: "Rejeté",
+  "to-investigate": "À approfondir",
 }
 
 /**
- * Labels en francais pour les badges de statut de mission
+ * Labels en français pour les badges de statut de mission
  */
 const statusLabels: Record<string, string> = {
-  created: "Cree",
+  created: "Créé",
   analyzing: "Analyse en cours",
-  complete: "Termine",
-  failed: "Echoue",
+  complete: "Terminé",
+  failed: "Échoué",
 }
 
 /**
- * Labels en francais pour les badges de priorite
+ * Labels en français pour les badges de priorité
  */
 const priorityLabels: Record<string, string> = {
   "priority-high": "Haute",

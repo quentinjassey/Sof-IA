@@ -16,24 +16,24 @@ import type { Trace, ActorType, TraceAction } from '@/types/database'
 // --- Action labels ---
 
 const actionLabels: Record<TraceAction, string> = {
-  mission_created: 'Mission creee',
-  mission_updated: 'Mission mise a jour',
-  mission_deleted: 'Mission supprimee',
-  document_added: 'Document(s) ajoute(s)',
-  document_deleted: 'Document supprime',
-  analysis_started: 'Pre-analyse demarree',
-  analysis_completed: 'Pre-analyse terminee',
-  analysis_failed: 'Pre-analyse echouee',
-  fec_parsed: 'FEC parse',
+  mission_created: 'Mission créée',
+  mission_updated: 'Mission mise à jour',
+  mission_deleted: 'Mission supprimée',
+  document_added: 'Document(s) ajouté(s)',
+  document_deleted: 'Document supprimé',
+  analysis_started: 'Pré-analyse démarrée',
+  analysis_completed: 'Pré-analyse terminée',
+  analysis_failed: 'Pré-analyse échouée',
+  fec_parsed: 'FEC parsé',
   pdf_extracted: 'PDF extraits',
-  rapprochement_completed: 'Rapprochement termine',
-  signals_generated: 'Signaux generes',
-  deliverables_generated: 'Livrables generes',
-  signal_validated: 'Signal valide',
-  signal_rejected: 'Signal rejete',
-  signal_to_investigate: 'Signal a approfondir',
-  deliverables_regenerated: 'Livrables regeneres',
-  deliverables_exported: 'Livrables exportes',
+  rapprochement_completed: 'Rapprochement terminé',
+  signals_generated: 'Signaux générés',
+  deliverables_generated: 'Livrables générés',
+  signal_validated: 'Signal validé',
+  signal_rejected: 'Signal rejeté',
+  signal_to_investigate: 'Signal à approfondir',
+  deliverables_regenerated: 'Livrables régénérés',
+  deliverables_exported: 'Livrables exportés',
 }
 
 // --- Component ---
@@ -118,10 +118,10 @@ export default function TracesPage({
     <div className="mx-auto max-w-4xl space-y-6 animate-fade-in">
       {/* Page header */}
       <div>
-        <h1 className="text-2xl font-bold font-serif text-foreground">Journal de tracabilite</h1>
+        <h1 className="text-2xl font-bold font-serif text-foreground">Journal de traçabilité</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Historique chronologique de toutes les actions (Sof&apos;IA et CAC).
-          {traces.length > 0 && ` ${traces.length} action${traces.length !== 1 ? 's' : ''} tracee${traces.length !== 1 ? 's' : ''}.`}
+          {traces.length > 0 && ` ${traces.length} action${traces.length !== 1 ? 's' : ''} tracée${traces.length !== 1 ? 's' : ''}.`}
         </p>
       </div>
 
@@ -186,7 +186,7 @@ export default function TracesPage({
           className="ml-auto flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent"
         >
           <ArrowUpDown className="h-3.5 w-3.5" />
-          {sortOrder === 'desc' ? 'Plus recent d\'abord' : 'Plus ancien d\'abord'}
+          {sortOrder === 'desc' ? 'Plus récent d\'abord' : 'Plus ancien d\'abord'}
         </button>
       </div>
 
@@ -202,7 +202,7 @@ export default function TracesPage({
         <div className="rounded-xl border border-border bg-card px-6 py-10 text-center">
           <ClipboardList className="mx-auto h-10 w-10 text-muted-foreground/40" />
           <p className="mt-3 text-sm font-medium text-muted-foreground">
-            {actorFilter ? 'Aucune action ne correspond au filtre selectionne.' : 'Aucune action tracee pour cette mission.'}
+            {actorFilter ? 'Aucune action ne correspond au filtre sélectionné.' : 'Aucune action tracée pour cette mission.'}
           </p>
         </div>
       ) : (
@@ -271,8 +271,8 @@ export default function TracesPage({
       {/* Footer */}
       <div className="rounded-lg border border-muted bg-muted/50 px-5 py-3">
         <p className="text-xs text-muted-foreground">
-          Ce journal est genere automatiquement et ne peut etre modifie.
-          Il constitue la trace des diligences realisees dans le cadre de cette pre-analyse.
+          Ce journal est généré automatiquement et ne peut être modifié.
+          Il constitue la trace des diligences réalisées dans le cadre de cette pré-analyse.
         </p>
       </div>
     </div>

@@ -39,7 +39,7 @@ const decisionOptions: {
   },
   {
     value: 'to_investigate',
-    label: 'A approfondir',
+    label: 'À approfondir',
     icon: <Search className="h-4 w-4" />,
     selectedClass: 'border-warning/40 bg-warning/5 ring-2 ring-offset-1 ring-primary/30',
     buttonVariant: 'warning',
@@ -55,9 +55,9 @@ const decisionBadgeVariant: Record<HumanDecision, 'pending' | 'validated' | 'rej
 
 const decisionLabel: Record<HumanDecision, string> = {
   pending: 'En attente',
-  validated: 'Valide',
-  rejected: 'Rejete',
-  to_investigate: 'A approfondir',
+  validated: 'Validé',
+  rejected: 'Rejeté',
+  to_investigate: 'À approfondir',
 }
 
 export default function DecisionPanel({
@@ -102,7 +102,7 @@ export default function DecisionPanel({
 
       if (!res.ok) {
         const data = await res.json()
-        throw new Error(data.error || 'Erreur lors de la sauvegarde de la decision.')
+        throw new Error(data.error || 'Erreur lors de la sauvegarde de la décision.')
       }
 
       setSuccess(true)
@@ -119,10 +119,10 @@ export default function DecisionPanel({
   return (
     <div className="rounded-xl border border-border bg-card">
       <div className="border-b border-border px-5 py-3">
-        <h3 className="font-serif text-sm font-semibold text-card-foreground">Decision du commissaire aux comptes</h3>
+        <h3 className="font-serif text-sm font-semibold text-card-foreground">Décision du commissaire aux comptes</h3>
         {currentDecision !== 'pending' && decidedAt && (
           <div className="mt-1 flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">Decision actuelle :</span>
+            <span className="text-xs text-muted-foreground">Décision actuelle :</span>
             <Badge variant={decisionBadgeVariant[currentDecision]}>
               {decisionLabel[currentDecision]}
             </Badge>
@@ -178,7 +178,7 @@ export default function DecisionPanel({
             }}
             placeholder={
               isReject
-                ? 'Justifiez votre decision de rejet...'
+                ? 'Justifiez votre décision de rejet...'
                 : 'Commentaire optionnel...'
             }
             className={cn(
@@ -203,7 +203,7 @@ export default function DecisionPanel({
         {success && (
           <div className="mt-3 flex items-center gap-2.5 rounded-xl border border-success/20 bg-success/5 px-4 py-3">
             <CheckCircle className="h-4 w-4 flex-shrink-0 text-success" />
-            <p className="text-sm text-success">Decision enregistree avec succes.</p>
+            <p className="text-sm text-success">Décision enregistrée avec succès.</p>
           </div>
         )}
 
@@ -216,7 +216,7 @@ export default function DecisionPanel({
             loading={saving}
             className="w-full"
           >
-            Confirmer la decision
+            Confirmer la décision
           </Button>
         </div>
       </div>

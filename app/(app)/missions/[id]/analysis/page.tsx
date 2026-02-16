@@ -42,7 +42,7 @@ const STEP_LABELS = [
   'Rapprochement documentaire',
   'Analyse des signaux',
   'Consolidation',
-  'Generation des livrables',
+  'Génération des livrables',
 ]
 
 const POLL_INTERVAL = 4000 // 4 seconds
@@ -125,9 +125,9 @@ export default function AnalysisPage({
           const ft = data.failure_type || 'analysis_failed'
           setFailureType(ft)
           if (ft === 'upload_failed') {
-            setError(data.error || 'L\'envoi des documents a echoue. Veuillez reessayer.')
+            setError(data.error || 'L\'envoi des documents a échoué. Veuillez réessayer.')
           } else {
-            setError(data.error || 'La pre-analyse a echoue. Veuillez reessayer.')
+            setError(data.error || 'La pré-analyse a échoué. Veuillez réessayer.')
           }
           if (pollRef.current) clearInterval(pollRef.current)
           if (timerRef.current) clearInterval(timerRef.current)
@@ -136,7 +136,7 @@ export default function AnalysisPage({
 
         // Check timeout
         if (Date.now() - startTimeRef.current > MAX_POLL_DURATION) {
-          setError('L\'analyse a pris trop de temps. Le serveur est peut-etre surcharge.')
+          setError('L\'analyse a pris trop de temps. Le serveur est peut-être surchargé.')
           if (pollRef.current) clearInterval(pollRef.current)
           if (timerRef.current) clearInterval(timerRef.current)
           return
@@ -208,20 +208,20 @@ export default function AnalysisPage({
       <div>
         <h1 className="font-serif text-2xl font-bold text-foreground">
           {isCompleted
-            ? 'Pre-analyse terminee'
+            ? 'Pré-analyse terminée'
             : isFailed
               ? failureType === 'upload_failed'
-                ? 'Echec de l\'envoi des documents'
-                : 'Erreur lors de la pre-analyse'
-              : 'Pre-analyse en cours...'}
+                ? 'Échec de l\'envoi des documents'
+                : 'Erreur lors de la pré-analyse'
+              : 'Pré-analyse en cours...'}
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
           {isCompleted
-            ? 'La pre-analyse documentaire est terminee. Consultez les signaux detectes.'
+            ? 'La pré-analyse documentaire est terminée. Consultez les signaux détectés.'
             : isFailed
               ? failureType === 'upload_failed'
-                ? 'L\'envoi des documents vers le serveur d\'analyse a echoue.'
-                : 'Un probleme est survenu pendant l\'analyse.'
+                ? 'L\'envoi des documents vers le serveur d\'analyse a échoué.'
+                : 'Un problème est survenu pendant l\'analyse.'
               : 'Veuillez patienter pendant que Sof\'IA analyse vos documents.'}
         </p>
       </div>
@@ -243,13 +243,13 @@ export default function AnalysisPage({
             <div>
               <p className="text-lg font-semibold text-card-foreground">
                 {isCompleted
-                  ? 'Analyse completee avec succes'
+                  ? 'Analyse complétée avec succès'
                   : isFailed
                     ? 'Analyse interrompue'
                     : status?.progress?.message || 'Initialisation...'}
               </p>
               <p className="text-sm text-muted-foreground">
-                Temps ecoule : {formatTime(elapsedTime)}
+                Temps écoulé : {formatTime(elapsedTime)}
               </p>
             </div>
           </div>
@@ -326,13 +326,13 @@ export default function AnalysisPage({
               <div className="flex-1">
                 <p className="text-sm font-medium text-destructive">
                   {failureType === 'upload_failed'
-                    ? 'Echec de l\'envoi des documents'
-                    : 'Erreur lors de la pre-analyse'}
+                    ? 'Échec de l\'envoi des documents'
+                    : 'Erreur lors de la pré-analyse'}
                 </p>
                 <p className="mt-1 text-sm text-destructive/80">
                   {failureType === 'upload_failed'
-                    ? 'L\'envoi des documents a echoue. Veuillez reessayer.'
-                    : 'La pre-analyse a echoue. Veuillez reessayer.'}
+                    ? 'L\'envoi des documents a échoué. Veuillez réessayer.'
+                    : 'La pré-analyse a échoué. Veuillez réessayer.'}
                 </p>
               </div>
             </div>
@@ -349,7 +349,7 @@ export default function AnalysisPage({
                 onClick={() => router.push(`/missions/${missionId}/signals`)}
                 iconRight={<ArrowRight className="h-4 w-4" />}
               >
-                Consulter les signaux detectes
+                Consulter les signaux détectés
               </Button>
               <Button
                 variant="secondary"
@@ -370,7 +370,7 @@ export default function AnalysisPage({
               >
                 {failureType === 'upload_failed'
                   ? 'Renvoyer les documents'
-                  : 'Relancer la pre-analyse'}
+                  : 'Relancer la pré-analyse'}
               </Button>
               <Button
                 variant="secondary"
@@ -382,7 +382,7 @@ export default function AnalysisPage({
           )}
           {!isCompleted && !isFailed && (
             <p className="text-xs text-muted-foreground">
-              L&apos;analyse est en cours. Cette page se met a jour automatiquement.
+              L&apos;analyse est en cours. Cette page se met à jour automatiquement.
             </p>
           )}
         </div>

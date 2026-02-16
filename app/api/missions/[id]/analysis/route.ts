@@ -18,6 +18,7 @@ import {
   successResponse,
 } from '@/lib/auth/helpers'
 import type { ScenarioType, SignalPriority } from '@/types/database'
+import { analyzePointageMission } from '@/lib/services/pointage-analyzer'
 
 // ---------------------------------------------------------------
 // POST /api/missions/[id]/analysis — Launch pre-analysis
@@ -83,6 +84,63 @@ export async function POST(
       400
     )
   }
+
+  // --- POINTAGE BYPASS: Local analysis without N8N ---
+  if (mission.scenario === 'pointage' && mission.company_id) {
+    // Update status to analyzing
+    await supabase
+      .from('missions')
+      .update({ status: 'analyzing', updated_at: new Date().toISOString() })
+      .eq('id', missionId)
+
+    // Create trace: analysis_started
+    const actorNamePointage = await getActorName(session.license_id)
+    await createTrace({
+      mission_id: missionId,
+      license_id: session.license_id,
+      actor: 'user',
+      actor_name: actorNamePointage,
+      action: 'analysis_started',
+      target_type: 'mission',
+      target_id: missionId,
+      details: `Pre-analyse lancee sur ${documents?.length || 0} document(s) — Scenario : pointage (analyse locale)`,
+    })
+
+    try {
+      const result = await analyzePointageMission(
+        supabase,
+        missionId,
+        session.license_id,
+        mission.company_id
+      )
+
+      return successResponse(
+        {
+          analysis_id: missionId,
+          status: 'analyzed' as const,
+          signals_count: result.signals_count,
+          company_name: result.company_name,
+        },
+        200
+      )
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur inconnue'
+      console.error('Erreur analyse pointage locale:', errorMessage)
+
+      await supabase
+        .from('missions')
+        .update({ status: 'analysis_failed', updated_at: new Date().toISOString() })
+        .eq('id', missionId)
+
+      return errorResponse(
+        'Erreur lors de la pre-analyse locale des etats financiers.',
+        'ANALYSIS_FAILED',
+        500
+      )
+    }
+  }
+
+  // --- STANDARD N8N ANALYSIS (sondage_ca, cutoff) ---
 
   // Generate signed URLs for each document (1 hour validity = 3600 seconds)
   const documentRefs = []

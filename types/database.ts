@@ -134,6 +134,7 @@ export interface Mission {
   scenario: ScenarioType;
   status: MissionStatus;
   analysis_id: string | null;
+  company_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -220,6 +221,8 @@ export interface Signal {
   rule_description: string | null;
   priority: SignalPriority;
   explicability: SignalExplicability | null;
+  confidence_score: number | null;
+  confidence_explanation: string | null;
   human_decision: HumanDecision;
   human_comment: string | null;
   decided_at: string | null;
@@ -296,6 +299,7 @@ export interface MissionInsert {
   scenario: ScenarioType;
   status?: MissionStatus;
   analysis_id?: string | null;
+  company_id?: string | null;
   created_at?: string;
   updated_at?: string;
 }
@@ -348,6 +352,7 @@ export interface RapprochementInsert {
 export interface SignalInsert {
   id?: string;
   mission_id: string;
+  license_id?: string;
   document_id?: string | null;
   ecriture_id?: string | null;
   rapprochement_id?: string | null;
@@ -360,6 +365,8 @@ export interface SignalInsert {
   rule_description?: string | null;
   priority: SignalPriority;
   explicability?: SignalExplicability | null;
+  confidence_score?: number | null;
+  confidence_explanation?: string | null;
   human_decision?: HumanDecision;
   human_comment?: string | null;
   decided_at?: string | null;
@@ -368,6 +375,7 @@ export interface SignalInsert {
 export interface DeliverableInsert {
   id?: string;
   mission_id: string;
+  license_id?: string;
   type: DeliverableType;
   format: DeliverableFormat;
   title: string;
@@ -392,6 +400,7 @@ export interface TraceInsert {
 export interface CompletenessInsert {
   id?: string;
   mission_id: string;
+  license_id?: string;
   doc_type: string;
   label: string;
   required?: boolean;
@@ -426,6 +435,7 @@ export interface MissionUpdate {
   scenario?: ScenarioType;
   status?: MissionStatus;
   analysis_id?: string | null;
+  company_id?: string | null;
   updated_at?: string;
 }
 

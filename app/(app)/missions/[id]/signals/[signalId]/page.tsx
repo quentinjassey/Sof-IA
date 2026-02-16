@@ -12,6 +12,7 @@ import {
   Scale,
   Loader2,
   AlertCircle,
+  ShieldCheck,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import DisclaimerBanner from '@/components/ui/DisclaimerBanner'
@@ -28,12 +29,12 @@ import type {
 // --- Label maps ---
 
 const signalTypeLabels: Record<SignalType, string> = {
-  absence_piece: 'Piece justificative manquante',
-  incoherence_date: 'Incoherence de dates',
-  incoherence_montant: 'Ecart de montant',
-  rupture_chaine: 'Rupture de la chaine documentaire',
+  absence_piece: 'Pièce justificative manquante',
+  incoherence_date: 'Incohérence de dates',
+  incoherence_montant: 'Écart de montant',
+  rupture_chaine: 'Rupture de la chaîne documentaire',
   rattachement_temporel: 'Doute sur le rattachement temporel',
-  incompletude: 'Information incomplete',
+  incompletude: 'Information incomplète',
 }
 
 const priorityVariantMap: Record<SignalPriority, 'priority-high' | 'priority-medium' | 'priority-low'> = {
@@ -43,7 +44,7 @@ const priorityVariantMap: Record<SignalPriority, 'priority-high' | 'priority-med
 }
 
 const priorityLabels: Record<SignalPriority, string> = {
-  high: 'Elevee',
+  high: 'Élevée',
   medium: 'Moyenne',
   low: 'Faible',
 }
@@ -87,7 +88,7 @@ export default function SignalDetailPage({
         const res = await fetch(`/api/missions/${missionId}/signals/${signalId}`)
         if (!res.ok) {
           const data = await res.json()
-          throw new Error(data.error || 'Signal non trouve.')
+          throw new Error(data.error || 'Signal non trouvé.')
         }
 
         const json = await res.json()
@@ -142,7 +143,7 @@ export default function SignalDetailPage({
       <div className="mx-auto max-w-3xl space-y-6">
         <div className="rounded-2xl border border-destructive/20 bg-destructive/5 px-6 py-8 text-center">
           <AlertCircle className="mx-auto h-10 w-10 text-destructive" />
-          <p className="mt-3 text-sm text-destructive">{error || 'Signal non trouve.'}</p>
+          <p className="mt-3 text-sm text-destructive">{error || 'Signal non trouvé.'}</p>
           <Link
             href={`/missions/${missionId}/signals`}
             className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-primary hover:text-primary/80"
@@ -176,8 +177,23 @@ export default function SignalDetailPage({
           </h1>
           <div className="mt-2 flex items-center gap-3">
             <Badge variant={priorityVariantMap[signal.priority]}>
-              Priorite {priorityLabels[signal.priority]}
+              Priorité {priorityLabels[signal.priority]}
             </Badge>
+            {signal.confidence_score != null && (
+              <span
+                className={cn(
+                  'inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold',
+                  signal.confidence_score >= 90
+                    ? 'bg-primary/10 text-primary'
+                    : signal.confidence_score >= 75
+                      ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
+                      : 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                )}
+              >
+                <ShieldCheck className="h-3.5 w-3.5" />
+                Confiance {signal.confidence_score} %
+              </span>
+            )}
             <span className="text-sm text-muted-foreground">
               {signalTypeLabels[signal.type]}
             </span>
@@ -216,7 +232,7 @@ export default function SignalDetailPage({
             <div className="rounded-2xl border border-border bg-card">
               <div className="flex items-center gap-2 border-b border-border px-5 py-3">
                 <FileText className="h-4 w-4 text-primary" />
-                <h2 className="text-sm font-semibold text-foreground">Documents compares</h2>
+                <h2 className="text-sm font-semibold text-foreground">Documents comparés</h2>
               </div>
               <div className="divide-y divide-border/50 px-5 py-2">
                 {signal.explicability.documents_compared.map((doc, i) => (
@@ -255,7 +271,7 @@ export default function SignalDetailPage({
             <div className="rounded-2xl border border-border bg-card">
               <div className="flex items-center gap-2 border-b border-border px-5 py-3">
                 <Scale className="h-4 w-4 text-primary" />
-                <h2 className="text-sm font-semibold text-foreground">Regle declenchee</h2>
+                <h2 className="text-sm font-semibold text-foreground">Règle déclenchée</h2>
               </div>
               <div className="px-5 py-4">
                 {signal.rule_triggered && (
@@ -270,9 +286,71 @@ export default function SignalDetailPage({
                 )}
                 {signal.explicability?.rule_source && (
                   <p className="mt-2 text-xs text-muted-foreground/70">
-                    Reference : {signal.explicability.rule_source}
+                    Référence : {signal.explicability.rule_source}
                   </p>
                 )}
+              </div>
+            </div>
+          )}
+
+          {/* Score de confiance */}
+          {signal.confidence_score != null && (
+            <div className="rounded-2xl border border-border bg-card">
+              <div className="flex items-center gap-2 border-b border-border px-5 py-3">
+                <ShieldCheck className="h-4 w-4 text-primary" />
+                <h2 className="text-sm font-semibold text-foreground">Score de confiance</h2>
+              </div>
+              <div className="px-5 py-4">
+                <div className="flex items-center gap-4">
+                  <div
+                    className={cn(
+                      'flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-xl text-lg font-bold',
+                      signal.confidence_score >= 90
+                        ? 'bg-primary/10 text-primary'
+                        : signal.confidence_score >= 75
+                          ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
+                          : 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                    )}
+                  >
+                    {signal.confidence_score}%
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-card-foreground">
+                      {signal.confidence_score >= 90
+                        ? 'Confiance élevée'
+                        : signal.confidence_score >= 75
+                          ? 'Confiance bonne'
+                          : 'Confiance modérée'}
+                    </p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {signal.confidence_explanation
+                        ? signal.confidence_explanation
+                        : signal.confidence_score >= 90
+                          ? 'Ce signal repose sur une comparaison numérique directe entre les documents. La fiabilité de la détection est très élevée.'
+                          : signal.confidence_score >= 75
+                            ? 'Ce signal repose sur une vérification structurelle des documents. La section recherchée pourrait exister sous un intitulé différent.'
+                            : 'Ce signal implique une appréciation heuristique du contenu textuel. Le constat factuel (variation chiffrée) est certain, mais l\'évaluation de la suffisance de l\'explication est une estimation.'}
+                    </p>
+                  </div>
+                </div>
+                {/* Progress bar */}
+                <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
+                  <div
+                    className={cn(
+                      'h-full rounded-full transition-all duration-500',
+                      signal.confidence_score >= 90
+                        ? 'bg-primary'
+                        : signal.confidence_score >= 75
+                          ? 'bg-blue-500'
+                          : 'bg-amber-500'
+                    )}
+                    style={{ width: `${signal.confidence_score}%` }}
+                  />
+                </div>
+                <p className="mt-2 text-xs text-muted-foreground/60">
+                  Ce score reflète la fiabilité de la détection par Sof&apos;IA, pas la gravité du constat.
+                  Le commissaire aux comptes reste seul juge de l&apos;importance du signal.
+                </p>
               </div>
             </div>
           )}
@@ -281,17 +359,17 @@ export default function SignalDetailPage({
           {ecriture && (
             <div className="rounded-2xl border border-border bg-card">
               <div className="border-b border-border px-5 py-3">
-                <h2 className="text-sm font-semibold text-foreground">Ecriture FEC associee</h2>
+                <h2 className="text-sm font-semibold text-foreground">Écriture FEC associée</h2>
               </div>
               <div className="overflow-x-auto px-5 py-4">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-border">
-                      <th className="pb-2 pr-4 text-left font-medium text-muted-foreground">Numero</th>
+                      <th className="pb-2 pr-4 text-left font-medium text-muted-foreground">Numéro</th>
                       <th className="pb-2 pr-4 text-left font-medium text-muted-foreground">Date</th>
                       <th className="pb-2 pr-4 text-left font-medium text-muted-foreground">Compte</th>
-                      <th className="pb-2 pr-4 text-right font-medium text-muted-foreground">Debit</th>
-                      <th className="pb-2 text-right font-medium text-muted-foreground">Credit</th>
+                      <th className="pb-2 pr-4 text-right font-medium text-muted-foreground">Débit</th>
+                      <th className="pb-2 text-right font-medium text-muted-foreground">Crédit</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -322,12 +400,12 @@ export default function SignalDetailPage({
                 </table>
                 {ecriture.ecriture_lib && (
                   <p className="mt-2 text-xs text-muted-foreground">
-                    Libelle : {ecriture.ecriture_lib}
+                    Libellé : {ecriture.ecriture_lib}
                   </p>
                 )}
                 {ecriture.piece_ref && (
                   <p className="mt-1 text-xs text-muted-foreground">
-                    Reference piece : {ecriture.piece_ref}
+                    Référence pièce : {ecriture.piece_ref}
                   </p>
                 )}
               </div>
@@ -358,7 +436,7 @@ export default function SignalDetailPage({
             className="flex items-center gap-2 text-sm font-medium text-primary transition-colors hover:text-primary/80"
           >
             <ArrowLeft className="h-4 w-4" />
-            Signal precedent
+            Signal précédent
           </button>
         ) : (
           <span />

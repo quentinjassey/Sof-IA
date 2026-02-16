@@ -6,20 +6,22 @@
 // =============================================================================
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-explicit-any
-const PdfPrinter = require('pdfmake') as any
+const PdfPrinter = require('pdfmake/src/printer') as any
+import path from 'path'
 import type { TDocumentDefinitions, Content, TableCell } from 'pdfmake/interfaces'
 import type { Completeness, Profile, Mission } from '@/types/database'
 
 // -----------------------------------------------------------------------------
-// Fonts configuration (Roboto bundled with pdfmake)
+// Fonts configuration (Roboto TTFs extracted from pdfmake vfs_fonts.js)
 // -----------------------------------------------------------------------------
 
+const fontDir = path.join(process.cwd(), 'fonts')
 const fonts = {
   Roboto: {
-    normal: 'node_modules/pdfmake/build/vfs_fonts.js',
-    bold: 'node_modules/pdfmake/build/vfs_fonts.js',
-    italics: 'node_modules/pdfmake/build/vfs_fonts.js',
-    bolditalics: 'node_modules/pdfmake/build/vfs_fonts.js',
+    normal: path.join(fontDir, 'Roboto-Regular.ttf'),
+    bold: path.join(fontDir, 'Roboto-Medium.ttf'),
+    italics: path.join(fontDir, 'Roboto-Italic.ttf'),
+    bolditalics: path.join(fontDir, 'Roboto-MediumItalic.ttf'),
   },
 }
 

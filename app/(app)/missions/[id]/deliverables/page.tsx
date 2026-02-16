@@ -11,10 +11,12 @@ import {
   Loader2,
   AlertCircle,
   Info,
+  Eye,
 } from 'lucide-react'
 import DisclaimerBanner from '@/components/ui/DisclaimerBanner'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
+import { PdfPreviewModal } from '@/components/ui/PdfPreviewModal'
 import { cn } from '@/lib/utils'
 import type { Deliverable, DeliverableType } from '@/types/database'
 
@@ -29,26 +31,26 @@ interface DeliverableMeta {
 
 const deliverableMeta: Record<DeliverableType, DeliverableMeta> = {
   checklist_completude: {
-    title: 'Check-list de completude documentaire',
-    description: 'Liste des documents attendus, recus et leur statut. Permet de verifier la completude du dossier documentaire.',
+    title: 'Check-list de complétude documentaire',
+    description: 'Liste des documents attendus, reçus et leur statut. Permet de vérifier la complétude du dossier documentaire.',
     icon: <FileCheck className="h-6 w-6 text-primary" />,
     formatLabel: 'PDF',
   },
   tableau_signaux: {
     title: 'Tableau des signaux documentaires',
-    description: 'Tableau detaille de tous les signaux detectes avec les decisions du commissaire aux comptes.',
+    description: 'Tableau détaillé de tous les signaux détectés avec les décisions du commissaire aux comptes.',
     icon: <FileSpreadsheet className="h-6 w-6 text-primary" />,
     formatLabel: 'XLSX',
   },
   synthese_preanalyse: {
-    title: 'Synthese de pre-analyse (NEP 230)',
-    description: 'Document de synthese integrable au dossier de travail. Perimetre, constats, decisions et limites.',
+    title: 'Synthèse de pré-analyse (NEP 230)',
+    description: 'Document de synthèse intégrable au dossier de travail. Périmètre, constats, décisions et limites.',
     icon: <FileText className="h-6 w-6 text-primary" />,
     formatLabel: 'PDF',
   },
   journal_tracabilite: {
-    title: 'Journal de tracabilite',
-    description: 'Historique chronologique complet de toutes les actions realisees (Sof\'IA et CAC).',
+    title: 'Journal de traçabilité',
+    description: 'Historique chronologique complet de toutes les actions réalisées (Sof\'IA et CAC).',
     icon: <ClipboardList className="h-6 w-6 text-primary" />,
     formatLabel: 'PDF',
   },
@@ -76,6 +78,7 @@ export default function DeliverablesPage({
   const [regenerating, setRegenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [previewDeliverable, setPreviewDeliverable] = useState<{ id: string; title: string } | null>(null)
 
   // --- Fetch deliverables ---
 
@@ -114,13 +117,13 @@ export default function DeliverablesPage({
 
       if (!res.ok) {
         const data = await res.json()
-        throw new Error(data.error || 'Erreur lors de la regeneration.')
+        throw new Error(data.error || 'Erreur lors de la régénération.')
       }
 
-      setSuccessMessage('Livrables regeneres avec succes. Vos decisions de validation sont integrees.')
+      setSuccessMessage('Livrables régénérés avec succès. Vos décisions de validation sont intégrées.')
       await fetchDeliverables()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur lors de la regeneration.')
+      setError(err instanceof Error ? err.message : 'Erreur lors de la régénération.')
     } finally {
       setRegenerating(false)
     }
@@ -152,9 +155,9 @@ export default function DeliverablesPage({
     <div className="mx-auto max-w-4xl space-y-6 animate-fade-in">
       {/* Page header */}
       <div>
-        <h1 className="text-2xl font-bold font-serif text-foreground">Livrables generes</h1>
+        <h1 className="text-2xl font-bold font-serif text-foreground">Livrables générés</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Check-list, tableau des signaux, synthese de pre-analyse et journal de tracabilite.
+          Check-list, tableau des signaux, synthèse de pré-analyse et journal de traçabilité.
         </p>
       </div>
 
@@ -165,8 +168,8 @@ export default function DeliverablesPage({
         <Info className="mt-0.5 h-5 w-5 flex-shrink-0 text-primary" />
         <div>
           <p className="text-sm text-primary">
-            Les livrables integrent vos decisions de validation.
-            Cliquez sur &laquo; Regenerer &raquo; pour mettre a jour apres de nouvelles decisions.
+            Les livrables intègrent vos décisions de validation.
+            Cliquez sur &laquo; Régénérer &raquo; pour mettre à jour après de nouvelles décisions.
           </p>
         </div>
       </div>
@@ -217,7 +220,7 @@ export default function DeliverablesPage({
                   <p className="mt-1 text-sm text-muted-foreground">{meta.description}</p>
                   {deliverable && (
                     <p className="mt-2 text-xs text-muted-foreground">
-                      Genere le {new Date(deliverable.generated_at).toLocaleDateString('fr-FR', {
+                      Généré le {new Date(deliverable.generated_at).toLocaleDateString('fr-FR', {
                         day: '2-digit',
                         month: '2-digit',
                         year: 'numeric',
@@ -228,17 +231,28 @@ export default function DeliverablesPage({
                   )}
                 </div>
 
-                {/* Download button */}
-                <div className="flex-shrink-0">
+                {/* Action buttons */}
+                <div className="flex flex-shrink-0 items-center gap-1.5">
                   {isAvailable ? (
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => handleDownload(deliverable!)}
-                      iconLeft={<Download className="h-4 w-4" />}
-                    >
-                      Telecharger {meta.formatLabel}
-                    </Button>
+                    <>
+                      {meta.formatLabel === 'PDF' && (
+                        <button
+                          onClick={() => setPreviewDeliverable({ id: deliverable!.id, title: meta.title })}
+                          className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
+                          title="Aperçu"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </button>
+                      )}
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => handleDownload(deliverable!)}
+                        iconLeft={<Download className="h-4 w-4" />}
+                      >
+                        Télécharger {meta.formatLabel}
+                      </Button>
+                    </>
                   ) : (
                     <span className="text-xs text-muted-foreground">Non disponible</span>
                   )}
@@ -254,10 +268,10 @@ export default function DeliverablesPage({
         <div className="rounded-2xl border border-border bg-card px-6 py-10 text-center">
           <FileText className="mx-auto h-10 w-10 text-muted-foreground" />
           <p className="mt-3 text-sm font-medium text-muted-foreground">
-            Aucun livrable genere pour cette mission.
+            Aucun livrable généré pour cette mission.
           </p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Les livrables seront generes automatiquement a l&apos;issue de la pre-analyse.
+            Les livrables seront générés automatiquement à l&apos;issue de la pré-analyse.
           </p>
         </div>
       )}
@@ -266,19 +280,23 @@ export default function DeliverablesPage({
       <div className="rounded-2xl border border-border bg-card px-5 py-4">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium text-card-foreground">Regenerer les livrables</p>
+            <p className="text-sm font-medium text-card-foreground">
+              {deliverables.length === 0 ? 'Générer les livrables' : 'Régénérer les livrables'}
+            </p>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              Regenere tous les livrables en integrant vos dernieres decisions de validation.
+              {deliverables.length === 0
+                ? 'Génère les 4 livrables à partir des résultats de la pré-analyse.'
+                : 'Régénère tous les livrables en intégrant vos dernières décisions de validation.'}
             </p>
           </div>
           <Button
             variant="secondary"
             onClick={handleRegenerate}
             loading={regenerating}
-            disabled={regenerating || deliverables.length === 0}
+            disabled={regenerating}
             iconLeft={<RotateCcw className="h-4 w-4" />}
           >
-            Regenerer tous les livrables
+            {deliverables.length === 0 ? 'Générer les livrables' : 'Régénérer tous les livrables'}
           </Button>
         </div>
       </div>
@@ -286,9 +304,20 @@ export default function DeliverablesPage({
       {/* Footer disclaimer */}
       <div className="rounded-lg border border-muted bg-muted/50 px-5 py-3">
         <p className="text-xs text-muted-foreground">
-          Ces documents sont des outils de pre-analyse. Ils ne constituent pas une conclusion d&apos;audit.
+          Ces documents sont des outils de pré-analyse. Ils ne constituent pas une conclusion d&apos;audit.
         </p>
       </div>
+
+      {/* PDF Preview Modal */}
+      {previewDeliverable && (
+        <PdfPreviewModal
+          isOpen={!!previewDeliverable}
+          onClose={() => setPreviewDeliverable(null)}
+          title={previewDeliverable.title}
+          pdfUrl={`/api/missions/${missionId}/deliverables/${previewDeliverable.id}/preview`}
+          downloadUrl={`/api/missions/${missionId}/deliverables/${previewDeliverable.id}/download`}
+        />
+      )}
     </div>
   )
 }

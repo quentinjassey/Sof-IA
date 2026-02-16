@@ -33,28 +33,28 @@ interface PaginationMeta {
 // --- Label maps ---
 
 const priorityFilterOptions: { value: string; label: string }[] = [
-  { value: '', label: 'Toutes priorites' },
-  { value: 'high', label: 'Elevee' },
+  { value: '', label: 'Toutes priorités' },
+  { value: 'high', label: 'Élevée' },
   { value: 'medium', label: 'Moyenne' },
   { value: 'low', label: 'Faible' },
 ]
 
 const typeFilterOptions: { value: string; label: string }[] = [
   { value: '', label: 'Tous types' },
-  { value: 'absence_piece', label: 'Piece justificative manquante' },
-  { value: 'incoherence_date', label: 'Incoherence de dates' },
-  { value: 'incoherence_montant', label: 'Ecart de montant' },
-  { value: 'rupture_chaine', label: 'Rupture de la chaine documentaire' },
+  { value: 'absence_piece', label: 'Pièce justificative manquante' },
+  { value: 'incoherence_date', label: 'Incohérence de dates' },
+  { value: 'incoherence_montant', label: 'Écart de montant' },
+  { value: 'rupture_chaine', label: 'Rupture de la chaîne documentaire' },
   { value: 'rattachement_temporel', label: 'Doute sur le rattachement temporel' },
-  { value: 'incompletude', label: 'Information incomplete' },
+  { value: 'incompletude', label: 'Information incomplète' },
 ]
 
 const decisionFilterOptions: { value: string; label: string }[] = [
   { value: '', label: 'Tous statuts' },
   { value: 'pending', label: 'En attente' },
-  { value: 'validated', label: 'Valide' },
-  { value: 'rejected', label: 'Rejete' },
-  { value: 'to_investigate', label: 'A approfondir' },
+  { value: 'validated', label: 'Validé' },
+  { value: 'rejected', label: 'Rejeté' },
+  { value: 'to_investigate', label: 'À approfondir' },
 ]
 
 // --- Component ---
@@ -146,9 +146,9 @@ export default function SignalsPage({
       {/* Page header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold font-serif text-foreground">Signaux documentaires detectes</h1>
+          <h1 className="text-2xl font-bold font-serif text-foreground">Signaux documentaires détectés</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {totalSignals} signal{totalSignals !== 1 ? 'x' : ''} identifie{totalSignals !== 1 ? 's' : ''} lors de la pre-analyse
+            {totalSignals} signal{totalSignals !== 1 ? 'x' : ''} identifié{totalSignals !== 1 ? 's' : ''} lors de la pré-analyse
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -162,11 +162,11 @@ export default function SignalsPage({
       {/* Stats bar */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <div className="rounded-xl border border-border bg-card px-4 py-3">
-          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Priorite elevee</p>
+          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Priorité élevée</p>
           <p className="mt-1 text-2xl font-bold text-destructive">{highCount}</p>
         </div>
         <div className="rounded-xl border border-border bg-card px-4 py-3">
-          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Priorite moyenne</p>
+          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Priorité moyenne</p>
           <p className="mt-1 text-2xl font-bold text-warning-foreground">{mediumCount}</p>
         </div>
         <div className="rounded-xl border border-border bg-card px-4 py-3">
@@ -174,22 +174,22 @@ export default function SignalsPage({
           <p className="mt-1 text-2xl font-bold text-muted-foreground">{pendingCount}</p>
         </div>
         <div className="rounded-xl border border-border bg-card px-4 py-3">
-          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Decides</p>
+          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Décidés</p>
           <p className="mt-1 text-2xl font-bold text-success">{validatedCount + rejectedCount + investigateCount}</p>
         </div>
       </div>
 
       {/* Summary line */}
       <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-        <span>Resume :</span>
-        <Badge variant="priority-high">{highCount} elevee{highCount !== 1 ? 's' : ''}</Badge>
+        <span>Résumé :</span>
+        <Badge variant="priority-high">{highCount} élevée{highCount !== 1 ? 's' : ''}</Badge>
         <Badge variant="priority-medium">{mediumCount} moyenne{mediumCount !== 1 ? 's' : ''}</Badge>
         <Badge variant="priority-low">{lowCount} faible{lowCount !== 1 ? 's' : ''}</Badge>
         <span className="text-border">|</span>
         <Badge variant="pending">{pendingCount} en attente</Badge>
-        <Badge variant="validated">{validatedCount} valide{validatedCount !== 1 ? 's' : ''}</Badge>
-        <Badge variant="rejected">{rejectedCount} rejete{rejectedCount !== 1 ? 's' : ''}</Badge>
-        <Badge variant="to-investigate">{investigateCount} a approfondir</Badge>
+        <Badge variant="validated">{validatedCount} validé{validatedCount !== 1 ? 's' : ''}</Badge>
+        <Badge variant="rejected">{rejectedCount} rejeté{rejectedCount !== 1 ? 's' : ''}</Badge>
+        <Badge variant="to-investigate">{investigateCount} à approfondir</Badge>
       </div>
 
       {/* Filters */}
@@ -238,7 +238,7 @@ export default function SignalsPage({
         <div className="rounded-xl border border-border bg-card px-6 py-10 text-center">
           <AlertTriangle className={cn("mx-auto h-10 w-10", "text-muted-foreground/40")} />
           <p className="mt-3 text-sm font-medium text-muted-foreground">
-            Aucun signal documentaire ne correspond aux filtres selectionnes.
+            Aucun signal documentaire ne correspond aux filtres sélectionnés.
           </p>
         </div>
       ) : (

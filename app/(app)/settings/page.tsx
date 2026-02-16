@@ -115,7 +115,7 @@ export default function SettingsPage() {
     return (
       <div className="flex flex-col items-center justify-center py-20">
         <Loader2 className="h-6 w-6 animate-spin text-primary" />
-        <span className="mt-3 text-sm text-muted-foreground">Chargement des parametres...</span>
+        <span className="mt-3 text-sm text-muted-foreground">Chargement des paramètres...</span>
       </div>
     )
   }
@@ -137,13 +137,13 @@ export default function SettingsPage() {
       required: true,
       icon: Building2,
       type: 'text',
-      placeholder: 'Cabinet Dupont & Associes',
+      placeholder: 'Cabinet Dupont & Associés',
       value: cabinet,
       onChange: setCabinet,
     },
     {
       id: 'inscription_cncc',
-      label: "Numero d'inscription CNCC",
+      label: "Numéro d'inscription CNCC",
       required: false,
       icon: Hash,
       type: 'text',
@@ -168,10 +168,10 @@ export default function SettingsPage() {
       {/* Page heading */}
       <div>
         <h1 className="font-serif text-2xl tracking-tight text-foreground">
-          Parametres
+          Paramètres
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Gerez votre profil professionnel et votre licence
+          Gérez votre profil professionnel et votre licence
         </p>
       </div>
 
@@ -195,7 +195,7 @@ export default function SettingsPage() {
                 Profil du commissaire aux comptes
               </h2>
               <p className="text-xs text-muted-foreground">
-                Ces informations apparaissent sur les livrables et le journal de tracabilite.
+                Ces informations apparaissent sur les livrables et le journal de traçabilité.
               </p>
             </div>
           </div>
@@ -247,7 +247,7 @@ export default function SettingsPage() {
             <div className="flex items-center gap-2.5 rounded-xl border border-success/20 bg-success/5 px-4 py-3">
               <CheckCircle className="h-4 w-4 shrink-0 text-success" />
               <p className="text-sm text-success">
-                Profil enregistre avec succes.
+                Profil enregistré avec succès.
               </p>
             </div>
           )}
@@ -297,7 +297,7 @@ export default function SettingsPage() {
               {/* License key (masked) */}
               <div className="flex items-center justify-between">
                 <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                  Cle de licence
+                  Clé de licence
                 </span>
                 <span className="font-mono text-sm text-foreground">
                   {maskLicenseKey(licenseInfo.license_key)}
@@ -327,7 +327,7 @@ export default function SettingsPage() {
                   <div className="h-px bg-border/60" />
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                      Activee le
+                      Activée le
                     </span>
                     <span className="text-sm text-foreground">
                       {formatDate(licenseInfo.activated_at)}
@@ -382,7 +382,7 @@ export default function SettingsPage() {
                   <div className="h-px bg-border/60" />
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                      Missions autorisees
+                      Missions autorisées
                     </span>
                     <span className="text-sm text-foreground">
                       {licenseInfo.max_missions}
@@ -404,9 +404,9 @@ export default function SettingsPage() {
         <div className="px-6 py-5">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-sm font-medium text-card-foreground">Deconnexion</h3>
+              <h3 className="text-sm font-medium text-card-foreground">Déconnexion</h3>
               <p className="mt-1 text-sm text-muted-foreground">
-                Se deconnecter et retourner a la page d&apos;activation de licence.
+                Se déconnecter et retourner à la page d&apos;activation de licence.
               </p>
             </div>
             <button
@@ -423,7 +423,7 @@ export default function SettingsPage() {
               ) : (
                 <LogOut className="h-4 w-4" />
               )}
-              {isLoggingOut ? 'Deconnexion...' : 'Se deconnecter'}
+              {isLoggingOut ? 'Déconnexion...' : 'Se déconnecter'}
             </button>
           </div>
         </div>

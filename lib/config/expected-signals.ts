@@ -229,16 +229,16 @@ const cutoffSignals: ScenarioExpectedSignals = {
 /**
  * SCENARIO 3 : Pointage des etats financiers
  *
- * Bilan, compte de resultat et annexe aux comptes annuels.
- * Total actif = Total passif = 2 450 000,00 EUR.
- * CA net : 4 050 000,00 EUR. Resultat net : 128 000,00 EUR.
+ * Entreprise avec incoherences : Brasserie du Vieux Port SA (Marseille)
+ * CA net : 5 200 000 EUR. Resultat net : 210 000 EUR.
  *
- * 3 signaux attendus.
+ * 3 signaux attendus (detectes uniquement pour cette entreprise).
+ * Les 3 autres entreprises (ACME, Duval, Technipro) sont propres : 0 signaux.
  */
 const pointageSignals: ScenarioExpectedSignals = {
   scenario: 'pointage',
   label: 'Pointage des etats financiers',
-  company: 'ACME Distribution SAS',
+  company: 'Brasserie du Vieux Port SA',
   fiscal_year: '2025',
   total_signals: 3,
   signals: [
@@ -248,17 +248,17 @@ const pointageSignals: ScenarioExpectedSignals = {
       type: 'incoherence_montant',
       description:
         'Ecart entre le poste "Immobilisations corporelles" au bilan ' +
-        '(valeur nette : 996 000,00 EUR) et le montant indique dans l\'annexe Note 3 ' +
-        '(valeur nette : 981 000,00 EUR). Ecart de 15 000,00 EUR. ' +
-        'Le bilan presente un total brut de 1 530 000,00 EUR et des amortissements de 534 000,00 EUR ' +
-        '(net = 996 000,00 EUR). L\'annexe indique un total brut de 1 515 000,00 EUR et des ' +
-        'amortissements de 519 000,00 EUR (net = 981 000,00 EUR, en excluant la cession).',
+        '(brut : 2 450 000 EUR) et le montant indique dans l\'annexe Note 3 ' +
+        '(brut : 2 423 000 EUR). Ecart de 27 000 EUR. ' +
+        'Le bilan presente un total brut de 2 450 000 EUR et des amortissements de 1 205 000 EUR ' +
+        '(net = 1 245 000 EUR). L\'annexe indique un total brut de 2 423 000 EUR et des ' +
+        'amortissements de 1 178 000 EUR (net = 1 245 000 EUR).',
       priority: 'high',
-      source_document: 'bilan_ACME_2025.txt',
-      compared_documents: ['bilan_ACME_2025.txt', 'annexe_ACME_2025.txt'],
+      source_document: 'Bilan',
+      compared_documents: ['Bilan', 'Annexe — Note 3'],
       source_page: 'Bilan — Actif immobilise / Annexe — Note 3',
-      amount_ht: 996000,
-      discrepancy: '15 000,00 EUR',
+      amount_ht: 2450000,
+      discrepancy: '27 000 EUR (ecart brut)',
       nep_reference: 'NEP 500',
     },
     {
@@ -268,11 +268,12 @@ const pointageSignals: ScenarioExpectedSignals = {
       description:
         'Information obligatoire absente de l\'annexe : les engagements hors bilan ne sont pas ' +
         'mentionnes. L\'annexe ne contient aucune note relative aux engagements hors bilan ' +
-        '(cautions, garanties donnees, engagements de credit-bail, etc.), ce qui est une ' +
-        'information obligatoire au titre de l\'article L. 123-13 du Code de Commerce.',
+        '(credit-bail, cautions, garanties donnees, etc.). La societe dispose d\'emprunts bancaires ' +
+        'de 850 000 EUR et l\'absence de cette information est notable au regard de ' +
+        'l\'article L. 123-13 du Code de Commerce.',
       priority: 'medium',
-      source_document: 'annexe_ACME_2025.txt',
-      compared_documents: ['annexe_ACME_2025.txt'],
+      source_document: 'Annexe',
+      compared_documents: ['Annexe'],
       source_page: 'Annexe — Ensemble du document (absence constatee)',
       nep_reference: 'NEP 500',
     },
@@ -281,17 +282,17 @@ const pointageSignals: ScenarioExpectedSignals = {
       rule_triggered: 'PTG-005',
       type: 'rupture_chaine',
       description:
-        'Variation notable du poste "Autres charges externes" : 95 000,00 EUR en 2025 contre ' +
-        '52 000,00 EUR en 2024, soit une hausse de +82,7 %. ' +
-        'L\'annexe (Note 14) fournit un detail partiel (frais de recrutement 25 000 EUR, ' +
-        'formation 18 000 EUR, cotisations 12 000 EUR) mais 40 000 EUR restent sous la ' +
-        'mention "Divers" sans explication suffisante de cette variation.',
-      priority: 'medium',
-      source_document: 'compte_resultat_ACME_2025.txt',
-      compared_documents: ['compte_resultat_ACME_2025.txt', 'annexe_ACME_2025.txt'],
-      source_page: 'Compte de resultat — Charges d\'exploitation / Annexe — Note 14',
-      amount_ht: 95000,
-      discrepancy: '+43 000,00 EUR (+82,7 %)',
+        'Variation notable du poste "Honoraires" dans les autres charges externes : ' +
+        '142 000 EUR en 2025 contre 38 000 EUR en 2024, soit une hausse de +273,7 %. ' +
+        'L\'annexe (Note 13) mentionne uniquement "divers conseils et prestations" sans detail ' +
+        'suffisant de cette variation de 104 000 EUR.',
+      priority: 'high',
+      source_document: 'Annexe — Note 13',
+      compared_documents: ['Annexe — Note 13'],
+      source_page: 'Annexe — Note 13 (Autres informations)',
+      amount_ht: 142000,
+      discrepancy: '+104 000 EUR (+273,7 %)',
+      nep_reference: 'NEP 500',
     },
   ],
 };

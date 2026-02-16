@@ -134,6 +134,7 @@ export async function generateAllDeliverables(
     const deliverable = await generateSingleDeliverable(
       supabase,
       missionId,
+      licenseId,
       definition,
       data
     )
@@ -176,6 +177,7 @@ export async function regenerateDeliverables(
     const deliverable = await generateSingleDeliverable(
       supabase,
       missionId,
+      licenseId,
       definition,
       data
     )
@@ -277,6 +279,7 @@ async function fetchDeliverableData(
 async function generateSingleDeliverable(
   supabase: SupabaseClient,
   missionId: string,
+  licenseId: string,
   definition: DeliverableDefinition,
   data: DeliverableData
 ): Promise<Deliverable> {
@@ -334,6 +337,7 @@ async function generateSingleDeliverable(
     // Insert new record
     const insertData: DeliverableInsert = {
       mission_id: missionId,
+      license_id: licenseId,
       type: definition.type,
       format: definition.format,
       title: definition.title,

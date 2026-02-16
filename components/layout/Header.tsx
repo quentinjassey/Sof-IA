@@ -62,7 +62,7 @@ export default function Header() {
             "inline-flex h-8 w-8 items-center justify-center rounded-lg transition-colors",
             "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
           )}
-          title="Parametres"
+          title="Paramètres"
         >
           <Settings className="h-4 w-4" />
         </Link>

@@ -66,10 +66,15 @@ export async function hasRealPdfUploads(
 
   if (!documents || documents.length === 0) return false
 
-  // If at least one document doesn't match demo patterns, it's a real upload
+  const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.tiff', '.tif']
+
+  // If at least one document is an image or a non-demo PDF, it's a real upload
   return documents.some((doc) => {
     const filename = doc.filename.toLowerCase()
-    return !DEMO_FILENAME_PATTERNS.some((pattern) => pattern.test(filename))
+    const isImage = IMAGE_EXTENSIONS.some(ext => filename.endsWith(ext))
+    const isNonDemoPdf = filename.endsWith('.pdf') &&
+      !DEMO_FILENAME_PATTERNS.some((pattern) => pattern.test(filename))
+    return isImage || isNonDemoPdf
   })
 }
 
@@ -255,9 +260,9 @@ export async function analyzePointageFromRealPdfs(
   const totalTextLength = pdfs.reduce((sum, p) => sum + p.text.length, 0)
   if (totalTextLength < 100) {
     throw new Error(
-      'Les PDFs uploadés ne contiennent pas de texte exploitable. ' +
-      'Ils sont peut-être scannés sans couche OCR. ' +
-      'Veuillez utiliser des PDFs avec du texte sélectionnable.'
+      'Les documents uploades ne contiennent pas suffisamment de texte exploitable, ' +
+      'meme apres tentative de reconnaissance optique (OCR). ' +
+      'Verifiez la qualite des documents.'
     )
   }
 
@@ -267,6 +272,11 @@ export async function analyzePointageFromRealPdfs(
   const classified = classifyPdfs(pdfs)
 
   // 3. Create trace: extraction started
+  const ocrCount = pdfs.filter(p => p.extractionMethod === 'vision_ocr' || p.extractionMethod === 'direct_image').length
+  const traceDetails = `Texte extrait de ${pdfs.length} document(s) (${totalTextLength} caractères). ` +
+    `Mode : ${classified.isCombined ? 'PDF combiné découpé en sections' : 'documents séparés'}.` +
+    (ocrCount > 0 ? ` ${ocrCount} document(s) traité(s) par reconnaissance optique (OCR).` : '')
+
   await createTrace({
     mission_id: missionId,
     license_id: licenseId,
@@ -275,8 +285,7 @@ export async function analyzePointageFromRealPdfs(
     action: 'pdf_extracted',
     target_type: 'mission',
     target_id: missionId,
-    details: `Texte extrait de ${pdfs.length} document(s) PDF (${totalTextLength} caractères). ` +
-      `Mode : ${classified.isCombined ? 'PDF combiné découpé en sections' : 'PDFs séparés'}.`,
+    details: traceDetails,
   })
 
   // 4. Extract structured data via LLM

@@ -13,6 +13,7 @@ import {
 } from '@/lib/auth/helpers'
 import type { ScenarioType } from '@/types/database'
 import { getRandomCompany } from '@/lib/config/pointage-companies'
+import { getRandomCutoffCompany } from '@/lib/config/cutoff-companies'
 
 // Valid scenario values
 const VALID_SCENARIOS: ScenarioType[] = ['sondage_ca', 'cutoff', 'pointage']
@@ -151,10 +152,13 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // For pointage scenario, assign a random company
+  // For pointage/cutoff scenarios, assign a random company
   let companyId: string | null = null
   if (validScenario === 'pointage') {
     const company = getRandomCompany()
+    companyId = company.id
+  } else if (validScenario === 'cutoff') {
+    const company = getRandomCutoffCompany()
     companyId = company.id
   }
 

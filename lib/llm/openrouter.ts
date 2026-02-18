@@ -7,6 +7,18 @@
 // Modèle par défaut : Gemini Flash 3.0 via OpenRouter, temperature = 0
 // =============================================================================
 
+// Types pour les messages multimodaux (vision)
+type ContentPart =
+  | { type: 'text'; text: string }
+  | { type: 'image_url'; image_url: { url: string } }
+
+type MessageContent = string | ContentPart[]
+
+interface OpenRouterMultimodalMessage {
+  role: 'system' | 'user' | 'assistant'
+  content: MessageContent
+}
+
 interface OpenRouterMessage {
   role: 'system' | 'user' | 'assistant'
   content: string
@@ -67,6 +79,74 @@ export async function callOpenRouter(
   const data = (await response.json()) as OpenRouterResponse
   const content = data.choices?.[0]?.message?.content?.trim() || ''
   console.log(`[OpenRouter] ✓ Réponse reçue (${content.length} caractères)`)
+  return content
+}
+
+/**
+ * Appelle un modele via OpenRouter avec support multimodal (texte + images).
+ * Utilise pour l'OCR de documents scannes via Gemini Vision.
+ */
+export async function callOpenRouterVision(
+  systemPrompt: string,
+  userPrompt: string,
+  files: Array<{ base64: string; mimeType: string }>,
+  options?: {
+    temperature?: number
+    max_tokens?: number
+    model?: string
+  }
+): Promise<string> {
+  const apiKey = process.env.OPENROUTER_API_KEY
+  if (!apiKey || apiKey === '<YOUR_OPENROUTER_API_KEY>') {
+    throw new Error('OPENROUTER_API_KEY non configuree.')
+  }
+
+  if (!files || files.length === 0) {
+    throw new Error('callOpenRouterVision: aucun fichier fourni pour l\'analyse vision.')
+  }
+
+  const model = options?.model || process.env.OPENROUTER_MODEL || 'google/gemini-2.0-flash-001'
+  console.log(`[OpenRouter Vision] Appel LLM multimodal — modele: ${model}, fichiers: ${files.length}`)
+
+  // Build multimodal user message with text + images
+  const userContent: ContentPart[] = [
+    { type: 'text', text: userPrompt },
+    ...files.map((f) => ({
+      type: 'image_url' as const,
+      image_url: { url: `data:${f.mimeType};base64,${f.base64}` },
+    })),
+  ]
+
+  const messages: OpenRouterMultimodalMessage[] = [
+    { role: 'system', content: systemPrompt },
+    { role: 'user', content: userContent },
+  ]
+
+  const response = await fetch(OPENROUTER_API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+      'HTTP-Referer': 'https://sofia-poc.vercel.app',
+      'X-Title': "Sof'IA POC",
+    },
+    body: JSON.stringify({
+      model,
+      messages,
+      temperature: options?.temperature ?? 0,
+      max_tokens: options?.max_tokens ?? 4000,
+    }),
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    console.error(`[OpenRouter Vision] ✗ Erreur HTTP ${response.status}: ${errorText}`)
+    throw new Error(`OpenRouter Vision API error: ${response.status}`)
+  }
+
+  const data = (await response.json()) as OpenRouterResponse
+  const content = data.choices?.[0]?.message?.content?.trim() || ''
+  console.log(`[OpenRouter Vision] ✓ Reponse recue (${content.length} caracteres)`)
   return content
 }
 

@@ -20,6 +20,7 @@ import {
 import type { ScenarioType, SignalPriority } from '@/types/database'
 import { analyzePointageMission } from '@/lib/services/pointage-analyzer'
 import { hasRealPdfUploads, analyzePointageFromRealPdfs } from '@/lib/services/pointage-real-analyzer'
+import { analyzeCutoffMission, analyzeCutoffFromDocuments } from '@/lib/services/cutoff-analyzer'
 
 // ---------------------------------------------------------------
 // POST /api/missions/[id]/analysis — Launch pre-analysis
@@ -169,7 +170,100 @@ export async function POST(
     )
   }
 
-  // --- STANDARD N8N ANALYSIS (sondage_ca, cutoff) ---
+  // --- CUTOFF BYPASS: Local analysis without N8N ---
+  if (mission.scenario === 'cutoff') {
+    // Detect if real documents were uploaded (vs demo documents)
+    const CUTOFF_DEMO_PATTERNS = [
+      /^FEC_[a-z_]+_\d{4}\.txt$/i,
+      /^(?:FAC|FRN|AV)-\d{4}-\d{4}\.pdf$/i,
+      /^(?:BL|BR)-\d{4}-\d{4}\.pdf$/i,
+    ]
+    const CUTOFF_IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.tiff', '.tif']
+    const isRealCutoffDocs = documents!.some((doc) => {
+      const filename = doc.filename
+      const isImage = CUTOFF_IMAGE_EXTENSIONS.some(ext => filename.toLowerCase().endsWith(ext))
+      return isImage || !CUTOFF_DEMO_PATTERNS.some((pattern) => pattern.test(filename))
+    })
+
+    if (isRealCutoffDocs || mission.company_id) {
+      // Update status to analyzing
+      await supabase
+        .from('missions')
+        .update({ status: 'analyzing', updated_at: new Date().toISOString() })
+        .eq('id', missionId)
+
+      // Create trace: analysis_started
+      const actorNameCutoff = await getActorName(session.license_id)
+      const cutoffMode = isRealCutoffDocs ? 'documents réels (extraction FEC + PDF)' : 'données fictives'
+      await createTrace({
+        mission_id: missionId,
+        license_id: session.license_id,
+        actor: 'user',
+        actor_name: actorNameCutoff,
+        action: 'analysis_started',
+        target_type: 'mission',
+        target_id: missionId,
+        details: `Pre-analyse lancee sur ${documents?.length || 0} document(s) — Scenario : cutoff (${cutoffMode})`,
+      })
+
+      try {
+        let result
+
+        if (isRealCutoffDocs) {
+          // Real document extraction + parsing
+          console.log('[Analysis] Vrais documents cutoff détectés — lancement extraction FEC + PDF...')
+          result = await analyzeCutoffFromDocuments(
+            supabase,
+            missionId,
+            session.license_id
+          )
+        } else {
+          // Fictional company data
+          result = await analyzeCutoffMission(
+            supabase,
+            missionId,
+            session.license_id,
+            mission.company_id!
+          )
+        }
+
+        return successResponse(
+          {
+            analysis_id: missionId,
+            status: 'analyzed' as const,
+            signals_count: result.signals_count,
+            company_name: result.company_name,
+          },
+          200
+        )
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Erreur inconnue'
+        console.error('Erreur analyse cutoff locale:', errorMessage)
+
+        await supabase
+          .from('missions')
+          .update({ status: 'analysis_failed', updated_at: new Date().toISOString() })
+          .eq('id', missionId)
+
+        return errorResponse(
+          isRealCutoffDocs
+            ? `Erreur lors de la pre-analyse des documents réels : ${errorMessage}`
+            : `Erreur lors de la pre-analyse des documents de cut-off : ${errorMessage}`,
+          'ANALYSIS_FAILED',
+          500
+        )
+      }
+    }
+
+    // Cutoff mission without real docs and without company_id — cannot analyze
+    return errorResponse(
+      'Aucune donnée disponible pour la pré-analyse. Uploadez des documents ou sélectionnez une entreprise démo.',
+      'VALIDATION_ERROR',
+      400
+    )
+  }
+
+  // --- STANDARD N8N ANALYSIS (sondage_ca) ---
 
   // Generate signed URLs for each document (1 hour validity = 3600 seconds)
   const documentRefs = []

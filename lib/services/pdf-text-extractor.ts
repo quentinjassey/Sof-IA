@@ -6,6 +6,7 @@
 
 import { SupabaseClient } from '@supabase/supabase-js'
 import { PDFParse } from 'pdf-parse'
+import { extractTextViaVision } from './ocr-service'
 
 // -----------------------------------------------------------------------------
 // Types
@@ -16,6 +17,7 @@ export interface ExtractedPdf {
   storagePath: string
   text: string
   pageCount: number
+  extractionMethod?: 'pdf_parse' | 'vision_ocr' | 'direct_image'
 }
 
 export interface SplitSections {
@@ -36,7 +38,8 @@ export interface SplitSections {
 export async function extractTextFromStoredPdf(
   supabase: SupabaseClient,
   storagePath: string,
-  filename: string
+  filename: string,
+  options?: { enableOcr?: boolean }
 ): Promise<ExtractedPdf> {
   console.log(`[PDF] Téléchargement de ${filename} (${storagePath})...`)
 
@@ -68,15 +71,59 @@ export async function extractTextFromStoredPdf(
     console.warn(`[PDF] ATTENTION: ${filename} contient très peu de texte (${text.length} chars). PDF scanné sans OCR ?`)
   }
 
-  return { filename, storagePath, text, pageCount }
+  // OCR fallback: if text is too sparse and OCR is enabled, try vision extraction
+  if (text.length < 50 && options?.enableOcr) {
+    console.log(`[PDF] ${filename}: texte insuffisant (${text.length} chars). Tentative OCR via vision...`)
+    try {
+      const ocrResult = await extractTextViaVision(supabase, storagePath, filename)
+      console.log(`[PDF] OCR reussi pour ${filename}: ${ocrResult.text.length} caracteres`)
+      return {
+        filename,
+        storagePath,
+        text: ocrResult.text,
+        pageCount: ocrResult.pageCount || pageCount,
+        extractionMethod: 'vision_ocr',
+      }
+    } catch (ocrError) {
+      console.error(`[PDF] Echec OCR pour ${filename}:`, ocrError)
+      // Fall through to return sparse text
+    }
+  }
+
+  return { filename, storagePath, text, pageCount, extractionMethod: 'pdf_parse' }
 }
 
 // -----------------------------------------------------------------------------
-// Multi-PDF extraction for a mission
+// Image extraction via OCR
+// -----------------------------------------------------------------------------
+
+const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.tiff', '.tif']
+
+/**
+ * Extrait le texte d'une image (JPG, PNG, TIFF) via OCR vision.
+ */
+export async function extractTextFromStoredImage(
+  supabase: SupabaseClient,
+  storagePath: string,
+  filename: string
+): Promise<ExtractedPdf> {
+  console.log(`[Image] Extraction OCR pour ${filename}...`)
+  const ocrResult = await extractTextViaVision(supabase, storagePath, filename)
+  return {
+    filename,
+    storagePath,
+    text: ocrResult.text,
+    pageCount: 1,
+    extractionMethod: 'direct_image',
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Multi-document extraction for a mission (PDFs + images)
 // -----------------------------------------------------------------------------
 
 /**
- * Extrait le texte de tous les PDFs d'une mission.
+ * Extrait le texte de tous les documents d'une mission (PDFs et images).
  */
 export async function extractAllMissionPdfs(
   supabase: SupabaseClient,
@@ -91,18 +138,28 @@ export async function extractAllMissionPdfs(
     throw new Error(`Aucun document trouvé pour la mission ${missionId}`)
   }
 
-  const pdfDocs = documents.filter((doc) => doc.filename.toLowerCase().endsWith('.pdf'))
+  const supportedDocs = documents.filter((doc) => {
+    const filename = doc.filename.toLowerCase()
+    const isPdf = filename.endsWith('.pdf')
+    const isImage = IMAGE_EXTENSIONS.some(ext => filename.endsWith(ext))
+    return isPdf || isImage
+  })
 
-  if (pdfDocs.length === 0) {
-    throw new Error(`Aucun fichier PDF trouvé parmi les ${documents.length} document(s) de la mission.`)
+  if (supportedDocs.length === 0) {
+    throw new Error(`Aucun fichier exploitable (PDF ou image) trouvé parmi les ${documents.length} document(s) de la mission.`)
   }
 
   const pdfs: ExtractedPdf[] = []
   const errors: string[] = []
 
-  for (const doc of pdfDocs) {
+  for (const doc of supportedDocs) {
     try {
-      const extracted = await extractTextFromStoredPdf(supabase, doc.storage_path, doc.filename)
+      const filename = doc.filename.toLowerCase()
+      const isImage = IMAGE_EXTENSIONS.some(ext => filename.endsWith(ext))
+
+      const extracted = isImage
+        ? await extractTextFromStoredImage(supabase, doc.storage_path, doc.filename)
+        : await extractTextFromStoredPdf(supabase, doc.storage_path, doc.filename, { enableOcr: true })
       pdfs.push(extracted)
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
@@ -111,9 +168,9 @@ export async function extractAllMissionPdfs(
     }
   }
 
-  // If ALL PDFs failed, throw with the actual error details
+  // If ALL documents failed, throw with the actual error details
   if (pdfs.length === 0 && errors.length > 0) {
-    throw new Error(`Échec de l'extraction de tous les PDFs : ${errors.join(' | ')}`)
+    throw new Error(`Échec de l'extraction de tous les documents : ${errors.join(' | ')}`)
   }
 
   return pdfs

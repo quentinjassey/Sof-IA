@@ -189,6 +189,11 @@ export default function DocumentsPage({
         else if (nameLower.includes('resultat') || nameLower.includes('cr-')) docType = 'compte_resultat'
         else if (nameLower.includes('annexe')) docType = 'annexe'
         else if (nameLower.includes('contrat')) docType = 'contrat'
+      } else if (ext === 'jpg' || ext === 'jpeg' || ext === 'png' || ext === 'tiff' || ext === 'tif') {
+        const nameLower = file.name.toLowerCase()
+        if (nameLower.includes('bilan')) docType = 'bilan'
+        else if (nameLower.includes('resultat') || nameLower.includes('cr')) docType = 'compte_resultat'
+        else if (nameLower.includes('annexe')) docType = 'annexe'
       }
       formData.append('types', docType)
     })
@@ -417,7 +422,7 @@ export default function DocumentsPage({
           ref={fileInputRef}
           type="file"
           multiple
-          accept=".txt,.csv,.pdf"
+          accept=".txt,.csv,.pdf,.jpg,.jpeg,.png,.tiff,.tif"
           onChange={(e) => e.target.files && handleUpload(e.target.files)}
           className="hidden"
         />
@@ -426,18 +431,20 @@ export default function DocumentsPage({
           Glissez vos documents ici
         </p>
         <p className="mt-1 text-xs text-muted-foreground">
-          ou cliquez pour sélectionner — Formats acceptés : .txt (FEC), .pdf
+          ou cliquez pour sélectionner — Formats acceptés : .txt (FEC), .pdf, .jpg, .png, .tiff
         </p>
       </div>
 
-      {/* Demo Documents Button (pointage only) */}
-      {mission?.scenario === 'pointage' && mission?.company_id && documents.length === 0 && (
+      {/* Demo Documents Button (pointage + cutoff) */}
+      {(mission?.scenario === 'pointage' || mission?.scenario === 'cutoff') && mission?.company_id && documents.length === 0 && (
         <div className="rounded-2xl border border-primary/20 bg-primary/[0.03] px-5 py-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-card-foreground">Documents de démonstration</p>
               <p className="mt-0.5 text-xs text-muted-foreground">
-                Charger automatiquement le bilan, le compte de résultat et l&apos;annexe pour cette entreprise.
+                {mission.scenario === 'cutoff'
+                  ? 'Charger automatiquement le FEC, les factures et les bons de livraison/réception pour cette entreprise.'
+                  : 'Charger automatiquement le bilan, le compte de résultat et l\u0027annexe pour cette entreprise.'}
               </p>
             </div>
             <Button

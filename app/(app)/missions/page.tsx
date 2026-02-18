@@ -418,11 +418,14 @@ export default function MissionsPage() {
                 {missions.map((mission, index) => {
                   const status = STATUS_CONFIG[mission.status]
                   return (
-                    <button
+                    <div
                       key={mission.id}
+                      role="button"
+                      tabIndex={0}
                       onClick={() => router.push(getMissionLink(mission))}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') router.push(getMissionLink(mission)) }}
                       className={cn(
-                        "group flex w-full items-center gap-4 rounded-xl border border-border bg-card p-4 text-left transition-all",
+                        "group flex w-full items-center gap-4 rounded-xl border border-border bg-card p-4 text-left transition-all cursor-pointer",
                         "hover:border-primary/20 hover:shadow-sm",
                         "animate-fade-in opacity-0"
                       )}
@@ -486,7 +489,7 @@ export default function MissionsPage() {
                         </button>
                         <ChevronRight className="h-4 w-4 text-muted-foreground/40 transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
                       </div>
-                    </button>
+                    </div>
                   )
                 })}
               </div>

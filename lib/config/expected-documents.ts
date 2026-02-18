@@ -101,7 +101,7 @@ export const expectedDocuments: Record<ScenarioType, ExpectedDocument[]> = {
       description:
         'Factures de vente emises autour de la date de cloture (31/12). Permettent d\'analyser le rattachement temporel des produits.',
       required: true,
-      format: ['.pdf'],
+      format: ['.pdf', '.jpg', '.jpeg', '.png', '.tiff', '.tif'],
     },
     {
       type: 'facture_achat',
@@ -109,7 +109,7 @@ export const expectedDocuments: Record<ScenarioType, ExpectedDocument[]> = {
       description:
         'Factures fournisseurs recues autour de la date de cloture. Permettent d\'analyser le rattachement temporel des charges.',
       required: true,
-      format: ['.pdf'],
+      format: ['.pdf', '.jpg', '.jpeg', '.png', '.tiff', '.tif'],
     },
     {
       type: 'bon_livraison',
@@ -117,7 +117,7 @@ export const expectedDocuments: Record<ScenarioType, ExpectedDocument[]> = {
       description:
         'Bons de livraison (ventes) et bons de reception (achats) pour les operations de la periode de cloture. Permettent d\'etablir la date effective de transfert des biens.',
       required: true,
-      format: ['.pdf'],
+      format: ['.pdf', '.jpg', '.jpeg', '.png', '.tiff', '.tif'],
     },
     {
       type: 'contrat',
@@ -125,7 +125,7 @@ export const expectedDocuments: Record<ScenarioType, ExpectedDocument[]> = {
       description:
         'Contrats avec des prestations a cheval sur deux exercices, si disponibles. Permettent de verifier les modalites de rattachement temporel.',
       required: false,
-      format: ['.pdf'],
+      format: ['.pdf', '.jpg', '.jpeg', '.png', '.tiff', '.tif'],
     },
   ],
 
@@ -139,7 +139,7 @@ export const expectedDocuments: Record<ScenarioType, ExpectedDocument[]> = {
       description:
         'Bilan de l\'exercice audite, presentant l\'actif et le passif. Document central pour le pointage de coherence avec l\'annexe.',
       required: true,
-      format: ['.pdf'],
+      format: ['.pdf', '.jpg', '.jpeg', '.png', '.tiff', '.tif'],
     },
     {
       type: 'compte_resultat',
@@ -147,7 +147,7 @@ export const expectedDocuments: Record<ScenarioType, ExpectedDocument[]> = {
       description:
         'Compte de resultat de l\'exercice audite. Permet de verifier la coherence des totaux avec le bilan et les notes de l\'annexe.',
       required: true,
-      format: ['.pdf'],
+      format: ['.pdf', '.jpg', '.jpeg', '.png', '.tiff', '.tif'],
     },
     {
       type: 'annexe',
@@ -155,7 +155,7 @@ export const expectedDocuments: Record<ScenarioType, ExpectedDocument[]> = {
       description:
         'Annexe complete aux comptes annuels. Contient les notes explicatives, les tableaux de variation, les engagements hors bilan et les informations obligatoires.',
       required: true,
-      format: ['.pdf'],
+      format: ['.pdf', '.jpg', '.jpeg', '.png', '.tiff', '.tif'],
     },
     {
       type: 'fec',

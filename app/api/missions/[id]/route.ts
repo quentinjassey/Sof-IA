@@ -198,47 +198,55 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params
-
-  let session
   try {
-    session = await requireSession(req)
-  } catch (response) {
-    return response as Response
-  }
+    const { id } = await params
 
-  let mission
-  try {
-    mission = await requireMissionOwnership(id, session.license_id)
-  } catch (response) {
-    return response as Response
-  }
+    let session
+    try {
+      session = await requireSession(req)
+    } catch (response) {
+      return response as Response
+    }
 
-  // Only allow deleting missions in 'created' status
-  if (mission.status !== 'created') {
+    let mission
+    try {
+      mission = await requireMissionOwnership(id, session.license_id)
+    } catch (response) {
+      return response as Response
+    }
+
+    if (mission.status !== 'created') {
+      return errorResponse(
+        `Impossible de supprimer une mission en statut "${mission.status}". Seules les missions au statut "created" peuvent etre supprimees.`,
+        'FORBIDDEN',
+        403
+      )
+    }
+
+    const supabase = createServerSupabaseClient()
+
+    const { error } = await supabase
+      .from('missions')
+      .delete()
+      .eq('id', id)
+      .eq('license_id', session.license_id)
+
+    if (error) {
+      console.error(`[DELETE] Supabase error: ${JSON.stringify(error)}`)
+      return errorResponse(
+        'Erreur lors de la suppression de la mission.',
+        'INTERNAL_ERROR',
+        500
+      )
+    }
+
+    return successResponse({ success: true as const })
+  } catch (err) {
+    console.error(`[DELETE] Unexpected error:`, err)
     return errorResponse(
-      `Impossible de supprimer une mission en statut "${mission.status}". Seules les missions au statut "created" peuvent etre supprimees.`,
-      'FORBIDDEN',
-      403
-    )
-  }
-
-  const supabase = createServerSupabaseClient()
-
-  // Delete mission (CASCADE will remove related documents, traces, etc.)
-  const { error } = await supabase
-    .from('missions')
-    .delete()
-    .eq('id', id)
-    .eq('license_id', session.license_id)
-
-  if (error) {
-    return errorResponse(
-      'Erreur lors de la suppression de la mission.',
+      'Erreur interne lors de la suppression.',
       'INTERNAL_ERROR',
       500
     )
   }
-
-  return successResponse({ success: true as const })
 }

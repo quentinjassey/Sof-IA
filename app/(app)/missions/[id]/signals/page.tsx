@@ -12,6 +12,7 @@ import {
 import DisclaimerBanner from '@/components/ui/DisclaimerBanner'
 import SignalCard from '@/components/signals/SignalCard'
 import { Badge } from '@/components/ui/Badge'
+import { MissionPageHeader } from '@/components/missions/MissionPageHeader'
 import { cn } from '@/lib/utils'
 import type { Signal, SignalPriority, HumanDecision, SignalType } from '@/types/database'
 
@@ -144,18 +145,17 @@ export default function SignalsPage({
   return (
     <div className={cn("mx-auto max-w-5xl space-y-6", "animate-fade-in")}>
       {/* Page header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold font-serif text-foreground">Signaux documentaires détectés</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {totalSignals} signal{totalSignals !== 1 ? 'x' : ''} identifié{totalSignals !== 1 ? 's' : ''} lors de la pré-analyse
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <AlertTriangle className="h-5 w-5 text-amber-500" />
-          <span className="text-sm font-medium text-card-foreground">{totalSignals} signaux</span>
-        </div>
-      </div>
+      <MissionPageHeader
+        missionId={missionId}
+        title="Signaux documentaires détectés"
+        subtitle={`${totalSignals} signal${totalSignals !== 1 ? 'x' : ''} identifié${totalSignals !== 1 ? 's' : ''} lors de la pré-analyse`}
+        actions={
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-amber-500" />
+            <span className="text-sm font-medium text-card-foreground">{totalSignals} signaux</span>
+          </div>
+        }
+      />
 
       <DisclaimerBanner />
 

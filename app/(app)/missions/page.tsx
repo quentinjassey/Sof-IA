@@ -11,14 +11,15 @@ import {
   Loader2,
   AlertCircle,
   X,
-  FileText,
   Clock,
   ChevronRight,
   ArrowRight,
+  Trash2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Building2 } from 'lucide-react'
 import type { Mission, ScenarioType, MissionStatus } from '@/types/database'
+import { CompanyLogo, extractCompanyFromTitle } from '@/components/missions/CompanyLogo'
 
 interface ScenarioOption {
   id: ScenarioType
@@ -107,6 +108,7 @@ export default function MissionsPage() {
   const [selectedScenario, setSelectedScenario] = useState<ScenarioType | null>(null)
   const [isCreating, setIsCreating] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [deletingMissionId, setDeletingMissionId] = useState<string | null>(null)
 
   const fetchMissions = useCallback(async () => {
     try {
@@ -168,6 +170,43 @@ export default function MissionsPage() {
     setSelectedScenario(null)
     setError(null)
   }, [])
+
+  const handleDeleteMission = useCallback(
+    async (e: React.MouseEvent, missionId: string) => {
+      e.stopPropagation()
+      
+      console.log(`[handleDeleteMission] Attempting to delete mission ${missionId}`)
+      
+      if (!confirm('Êtes-vous sûr de vouloir supprimer cette mission ?')) {
+        console.log(`[handleDeleteMission] User cancelled`)
+        return
+      }
+
+      setDeletingMissionId(missionId)
+      try {
+        console.log(`[handleDeleteMission] Sending DELETE to /api/missions/${missionId}`)
+        const res = await fetch(`/api/missions/${missionId}`, {
+          method: 'DELETE',
+        })
+
+        const json = await res.json()
+
+        console.log(`[handleDeleteMission] Response:`, { status: res.status, ok: res.ok, json })
+
+        if (res.ok) {
+          setMissions((prev) => prev.filter((m) => m.id !== missionId))
+        } else {
+          alert(json.error || 'Erreur lors de la suppression de la mission.')
+        }
+      } catch (err) {
+        console.error(`[handleDeleteMission] Exception:`, err)
+        alert('Impossible de contacter le serveur.')
+      } finally {
+        setDeletingMissionId(null)
+      }
+    },
+    []
+  )
 
   return (
     <div className="mx-auto max-w-5xl">
@@ -389,9 +428,13 @@ export default function MissionsPage() {
                       )}
                       style={{ animationDelay: `${index * 60}ms` }}
                     >
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-                        <FileText className="h-5 w-5" />
-                      </div>
+                      <CompanyLogo
+                        name={
+                          mission.company_id
+                            ? mission.company_id
+                            : extractCompanyFromTitle(mission.name)
+                        }
+                      />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-3">
                           <h3 className="truncate text-sm font-semibold text-card-foreground group-hover:text-primary transition-colors">
@@ -422,7 +465,27 @@ export default function MissionsPage() {
                           </span>
                         </div>
                       </div>
-                      <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/40 transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          onClick={(e) => handleDeleteMission(e, mission.id)}
+                          disabled={deletingMissionId === mission.id || mission.status !== 'created'}
+                          className={cn(
+                            "opacity-0 transition-all rounded-lg p-2",
+                            mission.status === 'created' && "group-hover:opacity-100",
+                            mission.status === 'created'
+                              ? 'text-muted-foreground hover:text-destructive hover:bg-destructive/5 cursor-pointer'
+                              : 'text-muted-foreground/40 cursor-not-allowed'
+                          )}
+                          title={mission.status !== 'created' ? 'Impossible de supprimer une mission en cours' : 'Supprimer cette mission'}
+                        >
+                          {deletingMissionId === mission.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-4 w-4" />
+                          )}
+                        </button>
+                        <ChevronRight className="h-4 w-4 text-muted-foreground/40 transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
+                      </div>
                     </button>
                   )
                 })}

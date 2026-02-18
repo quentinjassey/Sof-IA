@@ -10,6 +10,7 @@ import {
   Loader2,
   ClipboardList,
 } from 'lucide-react'
+import { MissionPageHeader } from '@/components/missions/MissionPageHeader'
 import { cn } from '@/lib/utils'
 import type { Trace, ActorType, TraceAction } from '@/types/database'
 
@@ -117,13 +118,11 @@ export default function TracesPage({
   return (
     <div className="mx-auto max-w-4xl space-y-6 animate-fade-in">
       {/* Page header */}
-      <div>
-        <h1 className="text-2xl font-bold font-serif text-foreground">Journal de traçabilité</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Historique chronologique de toutes les actions (Sof&apos;IA et CAC).
-          {traces.length > 0 && ` ${traces.length} action${traces.length !== 1 ? 's' : ''} tracée${traces.length !== 1 ? 's' : ''}.`}
-        </p>
-      </div>
+      <MissionPageHeader
+        missionId={missionId}
+        title="Journal de traçabilité"
+        subtitle={`Historique chronologique de toutes les actions (Sof'IA et CAC).${traces.length > 0 ? ` ${traces.length} action${traces.length !== 1 ? 's' : ''} tracée${traces.length !== 1 ? 's' : ''}.` : ''}`}
+      />
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4">

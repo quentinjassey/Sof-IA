@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import DisclaimerBanner from '@/components/ui/DisclaimerBanner'
 import { Button } from '@/components/ui/Button'
+import { MissionPageHeader } from '@/components/missions/MissionPageHeader'
 import { cn } from '@/lib/utils'
 
 // --- Types ---
@@ -205,26 +206,27 @@ export default function AnalysisPage({
   return (
     <div className="mx-auto max-w-3xl space-y-6 animate-fade-in">
       {/* Page header */}
-      <div>
-        <h1 className="font-serif text-2xl font-bold text-foreground">
-          {isCompleted
+      <MissionPageHeader
+        missionId={missionId}
+        title={
+          isCompleted
             ? 'Pré-analyse terminée'
             : isFailed
               ? failureType === 'upload_failed'
-                ? 'Échec de l\'envoi des documents'
+                ? "Échec de l'envoi des documents"
                 : 'Erreur lors de la pré-analyse'
-              : 'Pré-analyse en cours...'}
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {isCompleted
+              : 'Pré-analyse en cours...'
+        }
+        subtitle={
+          isCompleted
             ? 'La pré-analyse documentaire est terminée. Consultez les signaux détectés.'
             : isFailed
               ? failureType === 'upload_failed'
-                ? 'L\'envoi des documents vers le serveur d\'analyse a échoué.'
+                ? "L'envoi des documents vers le serveur d'analyse a échoué."
                 : 'Un problème est survenu pendant l\'analyse.'
-              : 'Veuillez patienter pendant que Sof\'IA analyse vos documents.'}
-        </p>
-      </div>
+              : "Veuillez patienter pendant que Sof'IA analyse vos documents."
+        }
+      />
 
       <DisclaimerBanner />
 

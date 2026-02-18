@@ -20,6 +20,7 @@ import DisclaimerBanner from '@/components/ui/DisclaimerBanner'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { PdfPreviewModal } from '@/components/ui/PdfPreviewModal'
+import { MissionPageHeader } from '@/components/missions/MissionPageHeader'
 import { cn } from '@/lib/utils'
 
 // --- Types ---
@@ -327,14 +328,11 @@ export default function DocumentsPage({
   return (
     <div className="mx-auto max-w-5xl space-y-6 animate-fade-in">
       {/* Page header */}
-      <div>
-        <h1 className="font-serif text-2xl font-bold text-foreground">Documents de la mission</h1>
-        {mission && (
-          <p className="mt-1 text-sm text-muted-foreground">
-            {mission.name} — {mission.scenario === 'sondage_ca' ? 'Sondage sur le chiffre d\'affaires' : mission.scenario === 'cutoff' ? 'Césure d\'exercice (cut-off)' : 'Pointage des états financiers'}
-          </p>
-        )}
-      </div>
+      <MissionPageHeader
+        missionId={missionId}
+        mission={mission}
+        title="Documents de la mission"
+      />
 
       <DisclaimerBanner />
 

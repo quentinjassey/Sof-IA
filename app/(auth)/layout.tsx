@@ -16,14 +16,16 @@ export default function AuthLayout({
       <div className="relative z-10 w-full max-w-[26rem]">
         {/* SOF'IA Branding */}
         <div className="mb-10 flex flex-col items-center">
-          <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary shadow-lg shadow-primary/20">
-            <span className="font-serif text-2xl text-primary-foreground">S</span>
+          <div className="mb-6">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo/sofia-logo.webp"
+              alt="Sof'IA"
+              className="h-auto w-56 object-contain"
+            />
           </div>
-          <h1 className="font-serif text-3xl tracking-tight text-foreground">
-            Sof&apos;IA
-          </h1>
-          <p className="mt-2 text-center text-sm leading-relaxed text-muted-foreground">
-            Pre-analyse documentaire pour le commissaire aux comptes
+          <p className="text-center text-sm leading-relaxed text-muted-foreground">
+            Pré-analyse documentaire pour le commissaire aux comptes
           </p>
         </div>
 

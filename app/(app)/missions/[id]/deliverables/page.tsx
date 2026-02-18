@@ -17,6 +17,7 @@ import DisclaimerBanner from '@/components/ui/DisclaimerBanner'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { PdfPreviewModal } from '@/components/ui/PdfPreviewModal'
+import { MissionPageHeader } from '@/components/missions/MissionPageHeader'
 import { cn } from '@/lib/utils'
 import type { Deliverable, DeliverableType } from '@/types/database'
 
@@ -154,12 +155,11 @@ export default function DeliverablesPage({
   return (
     <div className="mx-auto max-w-4xl space-y-6 animate-fade-in">
       {/* Page header */}
-      <div>
-        <h1 className="text-2xl font-bold font-serif text-foreground">Livrables générés</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Check-list, tableau des signaux, synthèse de pré-analyse et journal de traçabilité.
-        </p>
-      </div>
+      <MissionPageHeader
+        missionId={missionId}
+        title="Livrables générés"
+        subtitle="Check-list, tableau des signaux, synthèse de pré-analyse et journal de traçabilité."
+      />
 
       <DisclaimerBanner />
 

@@ -84,20 +84,18 @@ export default function Sidebar() {
   const sidebarContent = (
     <>
       {/* Logo */}
-      <div className="flex h-14 items-center justify-between border-b border-sidebar-border px-5">
-        <Link href="/missions" className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sidebar-primary">
-            <span className="font-serif text-sm text-sidebar-primary-foreground">S</span>
-          </div>
-          <div className="flex items-baseline gap-2">
-            <span className="font-serif text-lg tracking-tight text-sidebar-foreground">
-              Sof&apos;IA
-            </span>
-            <span className="text-[10px] font-medium tracking-widest text-muted-foreground/50">
-              v0.1
-            </span>
-          </div>
+      <div className="flex h-14 items-center justify-between border-b border-sidebar-border px-4">
+        <Link href="/missions">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logo/sofia-logo.webp"
+            alt="Sof'IA"
+            className="h-8 w-auto object-contain"
+          />
         </Link>
+        <span className="text-[10px] font-medium tracking-widest text-muted-foreground/50">
+          v0.1
+        </span>
         <button
           onClick={() => setMobileOpen(false)}
           className="rounded-lg p-1 text-muted-foreground hover:bg-sidebar-accent lg:hidden"

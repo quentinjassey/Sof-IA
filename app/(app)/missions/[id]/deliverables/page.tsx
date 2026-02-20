@@ -16,7 +16,12 @@ import {
 import DisclaimerBanner from '@/components/ui/DisclaimerBanner'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
-import { PdfPreviewModal } from '@/components/ui/PdfPreviewModal'
+import dynamic from 'next/dynamic'
+
+const PdfPreviewModal = dynamic(
+  () => import('@/components/ui/PdfPreviewModal').then((m) => m.PdfPreviewModal),
+  { ssr: false }
+)
 import { MissionPageHeader } from '@/components/missions/MissionPageHeader'
 import { cn } from '@/lib/utils'
 import type { Deliverable, DeliverableType } from '@/types/database'

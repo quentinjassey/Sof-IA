@@ -18,9 +18,7 @@ import type {
   DeliveryNote,
 } from '@/lib/config/cutoff-companies'
 import { extractTextViaVision } from './ocr-service'
-
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const pdfParse = require('pdf-parse')
+import { PDFParse } from 'pdf-parse'
 
 const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.tiff', '.tif']
 
@@ -53,8 +51,14 @@ function fecDateToISO(yyyymmdd: string): string {
 
 /** Extract text from a PDF buffer using pdf-parse */
 async function extractPdfText(buffer: Buffer): Promise<string> {
-  const result = await pdfParse(buffer)
-  return result.text
+  const uint8 = new Uint8Array(buffer)
+  const parser = new PDFParse({ data: uint8 })
+  try {
+    const result = await parser.getText()
+    return result?.text?.trim() || ''
+  } finally {
+    await parser.destroy().catch(() => {})
+  }
 }
 
 /** Check if OpenRouter LLM is available */
@@ -133,15 +137,19 @@ export function parseFecBuffer(buffer: Buffer): FecEntry[] {
  */
 export async function fetchAndParseAllCutoffDocuments(
   supabase: SupabaseClient,
-  missionId: string
+  missionId: string,
+  projectId?: string | null
 ): Promise<ParsedCutoffDocuments> {
   console.log(`[CutoffParser] Fetching documents for mission ${missionId}...`)
 
-  // 1. Fetch document metadata from the documents table
-  const { data: documents, error } = await supabase
-    .from('documents')
-    .select('*')
-    .eq('mission_id', missionId)
+  // 1. Fetch document metadata — project-based or legacy mission-based
+  let query = supabase.from('documents').select('*')
+  if (projectId) {
+    query = query.eq('project_id', projectId)
+  } else {
+    query = query.eq('mission_id', missionId)
+  }
+  const { data: documents, error } = await query
 
   if (error || !documents || documents.length === 0) {
     throw new Error(`Aucun document trouve pour la mission ${missionId}`)
@@ -342,6 +350,36 @@ export async function fetchAndParseAllCutoffDocuments(
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
       console.error(`[CutoffParser] Error processing ${doc.filename}: ${msg}`)
+    }
+  }
+
+  // ===== POST-PARSE: Bidirectional cross-linking =====
+  // Detection rules use invoice.linked_bl_ref to find matching BLs.
+  // But in real documents, invoices rarely mention BL numbers — instead,
+  // BLs mention invoice numbers. Build the reverse link here.
+  for (const dn of deliveryNotes) {
+    if (!dn.linked_invoice) continue
+    const matchingInvoice = invoices.find(
+      (inv) => inv.ref === dn.linked_invoice && !inv.linked_bl_ref
+    )
+    if (matchingInvoice) {
+      matchingInvoice.linked_bl_ref = dn.ref
+      console.log(`[CutoffParser] Cross-link: ${matchingInvoice.ref} ← → ${dn.ref}`)
+    }
+  }
+
+  // Fallback: try matching by reference number suffix (e.g., FAC-2025-0610 ↔ BL-2025-0510)
+  for (const inv of invoices) {
+    if (inv.linked_bl_ref) continue
+    const invNum = inv.ref.replace(/^(FAC|FRN|AV)-/, '')
+    const expectedPrefix = inv.type === 'achat' ? 'BR-' : 'BL-'
+    const candidate = deliveryNotes.find(
+      (dn) => dn.ref.startsWith(expectedPrefix) && !invoices.some((i) => i.linked_bl_ref === dn.ref)
+        && dn.ref.replace(/^(BL|BR)-/, '') === invNum
+    )
+    if (candidate) {
+      inv.linked_bl_ref = candidate.ref
+      console.log(`[CutoffParser] Cross-link (suffix): ${inv.ref} ← → ${candidate.ref}`)
     }
   }
 

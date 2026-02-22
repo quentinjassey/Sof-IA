@@ -237,45 +237,70 @@ function fmt(n: number): string {
 export async function detectSignals(company: PointageCompany, missionId: string, licenseId: string): Promise<SignalInsert[]> {
   const signals: SignalInsert[] = []
 
+  console.log(`[Pointage] detectSignals pour ${company.name} (${company.annexe.length} notes annexe)`)
+  console.log(`[Pointage] Bilan immo corp brut: ${company.bilan.actif.immobilisations_corporelles.brut}`)
+  console.log(`[Pointage] CR résultat net: ${company.compte_resultat.resultat_net}, Passif résultat exercice: ${company.bilan.passif.resultat_exercice.net}`)
+
   // PTG-001 : Écart montant bilan / annexe (immobilisations corporelles)
   const ptg001 = checkPTG001(company, missionId, licenseId)
   if (ptg001) signals.push(ptg001)
+  else console.log('[Pointage] PTG-001: pas de signal')
 
   // PTG-002 : Engagements hors bilan absents
   const ptg002 = checkPTG002(company, missionId, licenseId)
   if (ptg002) signals.push(ptg002)
+  else console.log('[Pointage] PTG-002: pas de signal (engagements hors bilan trouvés)')
 
   // PTG-003 : Résultat net CR != résultat exercice passif
   const ptg003 = checkPTG003(company, missionId, licenseId)
   if (ptg003) signals.push(ptg003)
+  else console.log('[Pointage] PTG-003: pas de signal (résultats concordants)')
 
   // PTG-005 : Variation notable sans explication (utilise le LLM si disponible)
   const ptg005signals = await checkPTG005(company, missionId, licenseId)
   signals.push(...ptg005signals)
+  if (ptg005signals.length === 0) console.log('[Pointage] PTG-005: pas de signal (aucune variation notable)')
 
+  console.log(`[Pointage] Total signaux détectés: ${signals.length}`)
   return signals
 }
 
 /**
  * PTG-001 : Compare chaque poste majeur du bilan avec la note
  * correspondante de l'annexe. Signal si écart > 0 sur le brut.
+ *
+ * Recherche la note par titre (pas par numéro) pour robustesse
+ * avec les données extraites par LLM qui numérotent séquentiellement.
  */
 function checkPTG001(company: PointageCompany, missionId: string, licenseId: string): SignalInsert | null {
   const bilanImmoCorpBrut = company.bilan.actif.immobilisations_corporelles.brut
   const bilanImmoCorpAmort = company.bilan.actif.immobilisations_corporelles.amort
   const bilanImmoCorpNet = company.bilan.actif.immobilisations_corporelles.net
 
-  const annexeNote3 = company.annexe.find((n) => n.numero === 3)
-  if (!annexeNote3?.montants?.brut) return null
+  // Search by title first (robust for LLM-extracted data), fallback to numero === 3
+  const annexeNote = company.annexe.find(
+    (n) => n.titre.toLowerCase().includes('immobilisations corporelles')
+  ) || company.annexe.find((n) => n.numero === 3)
 
-  const annexeBrut = annexeNote3.montants.brut
-  const annexeAmort = annexeNote3.montants.amort ?? 0
-  const annexeNet = annexeNote3.montants.net ?? (annexeBrut - annexeAmort)
+  if (!annexeNote?.montants?.brut) {
+    console.log(`[PTG-001] Note immobilisations corporelles non trouvée ou sans montant brut. ` +
+      `Notes disponibles: ${company.annexe.map(n => `${n.numero}:"${n.titre}"`).join(', ')}`)
+    return null
+  }
+
+  const annexeBrut = annexeNote.montants.brut
+  const annexeAmort = annexeNote.montants.amort ?? 0
+  const annexeNet = annexeNote.montants.net ?? (annexeBrut - annexeAmort)
 
   const ecartBrut = Math.abs(bilanImmoCorpBrut - annexeBrut)
   const ecartAmort = Math.abs(bilanImmoCorpAmort - annexeAmort)
 
-  if (ecartBrut === 0 && ecartAmort === 0) return null
+  if (ecartBrut === 0 && ecartAmort === 0) {
+    console.log(`[PTG-001] Pas d'écart détecté (bilan brut: ${bilanImmoCorpBrut}, annexe brut: ${annexeBrut})`)
+    return null
+  }
+
+  const noteLabel = `Note ${annexeNote.numero}`
 
   return {
     mission_id: missionId,
@@ -283,7 +308,7 @@ function checkPTG001(company: PointageCompany, missionId: string, licenseId: str
     type: 'incoherence_montant',
     description:
       `Écart entre le poste « Immobilisations corporelles » au bilan ` +
-      `(brut : ${fmt(bilanImmoCorpBrut)} EUR) et le montant indiqué dans l'annexe Note 3 ` +
+      `(brut : ${fmt(bilanImmoCorpBrut)} EUR) et le montant indiqué dans l'annexe ${noteLabel} ` +
       `(brut : ${fmt(annexeBrut)} EUR). Écart de ${fmt(ecartBrut)} EUR. ` +
       `Le bilan présente un total brut de ${fmt(bilanImmoCorpBrut)} EUR et des amortissements de ${fmt(bilanImmoCorpAmort)} EUR ` +
       `(net = ${fmt(bilanImmoCorpNet)} EUR). L'annexe indique un total brut de ${fmt(annexeBrut)} EUR et des ` +
@@ -298,11 +323,11 @@ function checkPTG001(company: PointageCompany, missionId: string, licenseId: str
     explicability: {
       reasoning:
         `Constat factuel : le montant brut des immobilisations corporelles au bilan ` +
-        `(${fmt(bilanImmoCorpBrut)} EUR) ne correspond pas au montant indiqué dans la Note 3 de l'annexe ` +
+        `(${fmt(bilanImmoCorpBrut)} EUR) ne correspond pas au montant indiqué dans la ${noteLabel} de l'annexe ` +
         `(${fmt(annexeBrut)} EUR). L'écart de ${fmt(ecartBrut)} EUR nécessite l'attention du commissaire aux comptes.`,
       documents_compared: [
         { document: 'Bilan', element: `Immobilisations corporelles brut : ${fmt(bilanImmoCorpBrut)} EUR` },
-        { document: 'Annexe — Note 3', element: `Immobilisations corporelles brut : ${fmt(annexeBrut)} EUR` },
+        { document: `Annexe — ${noteLabel}`, element: `Immobilisations corporelles brut : ${fmt(annexeBrut)} EUR` },
       ],
       rule_source: 'PTG-001 — Écart de montant bilan / annexe (NEP 500)',
     },
@@ -359,6 +384,8 @@ function checkPTG002(company: PointageCompany, missionId: string, licenseId: str
 function checkPTG003(company: PointageCompany, missionId: string, licenseId: string): SignalInsert | null {
   const resultatCR = company.compte_resultat.resultat_net
   const resultatPassif = company.bilan.passif.resultat_exercice.net
+
+  console.log(`[PTG-003] CR résultat net: ${resultatCR}, Passif résultat exercice: ${resultatPassif}, écart: ${Math.abs(resultatCR - resultatPassif)}`)
 
   if (resultatCR === resultatPassif) return null
 
@@ -475,14 +502,13 @@ async function checkPTG005(company: PointageCompany, missionId: string, licenseI
   ]
 
   for (const line of allLines) {
-    if (line.montant_n1 === 0 || Math.abs(line.montant) < 20000) continue
+    if (line.montant_n1 === 0 || Math.abs(line.montant) < 10000) continue
 
     const variation = ((line.montant - line.montant_n1) / Math.abs(line.montant_n1)) * 100
     const ecart = Math.abs(line.montant - line.montant_n1)
 
-    // Only flag variations > 50% with ecart > 50 000 EUR (higher threshold for CR lines
-    // to avoid noise — the annexe-specific checks above catch the targeted cases)
-    if (Math.abs(variation) <= 50 || ecart <= 50000) continue
+    // Flag variations > 30% with ecart > 20 000 EUR (same thresholds as annexe-specific checks)
+    if (Math.abs(variation) <= 30 || ecart <= 20000) continue
 
     // Don't duplicate the honoraires signal
     if (line.label.toLowerCase().includes('honoraires')) continue

@@ -225,18 +225,28 @@ export async function DELETE(
 
     const supabase = createServerSupabaseClient()
 
-    const { error } = await supabase
-      .from('missions')
-      .delete()
-      .eq('id', id)
-      .eq('license_id', session.license_id)
+    // Use the safely_delete_mission function to handle the traces
+    // immutability trigger (traces_no_delete) which blocks ON DELETE CASCADE.
+    const { data: deleted, error } = await supabase
+      .rpc('safely_delete_mission', {
+        p_mission_id: id,
+        p_license_id: session.license_id,
+      })
 
     if (error) {
-      console.error(`[DELETE] Supabase error: ${JSON.stringify(error)}`)
+      console.error(`[DELETE] Supabase RPC error: ${JSON.stringify(error)}`)
       return errorResponse(
         'Erreur lors de la suppression de la mission.',
         'INTERNAL_ERROR',
         500
+      )
+    }
+
+    if (deleted === false) {
+      return errorResponse(
+        'Mission non trouvee ou non supprimable.',
+        'NOT_FOUND',
+        404
       )
     }
 

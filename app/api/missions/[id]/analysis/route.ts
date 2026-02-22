@@ -46,8 +46,8 @@ export async function POST(
     return response as Response
   }
 
-  // Verify mission is in a valid state for analysis
-  const validStatesForAnalysis = ['created', 'documents_ready', 'upload_failed', 'analysis_failed']
+  // Allow re-launch from analyzed/completed states (for project-based missions)
+  const validStatesForAnalysis = ['created', 'documents_ready', 'upload_failed', 'analysis_failed', 'analyzed', 'in_review', 'completed']
   if (!validStatesForAnalysis.includes(mission.status)) {
     if (mission.status === 'analyzing') {
       return errorResponse(
@@ -65,23 +65,84 @@ export async function POST(
 
   const supabase = createServerSupabaseClient()
 
-  // Get all documents for the mission
-  const { data: documents, error: docsError } = await supabase
-    .from('documents')
-    .select('*')
-    .eq('mission_id', missionId)
+  // Parse body for optional document_ids and options
+  let bodyData: { document_ids?: string[]; options?: Record<string, unknown> } = {}
+  try {
+    bodyData = await req.json()
+  } catch {
+    // No body or invalid JSON — proceed without specific doc selection
+  }
 
-  if (docsError) {
-    return errorResponse(
-      'Erreur lors de la recuperation des documents.',
-      'INTERNAL_ERROR',
-      500
-    )
+  // If re-launching (mission already analyzed), clean old analysis data
+  const relaunchStates = ['analyzed', 'in_review', 'completed']
+  if (relaunchStates.includes(mission.status)) {
+    await Promise.all([
+      supabase.from('signals').delete().eq('mission_id', missionId),
+      supabase.from('rapprochements').delete().eq('mission_id', missionId),
+      supabase.from('ecritures').delete().eq('mission_id', missionId),
+      supabase.from('completeness').delete().eq('mission_id', missionId),
+    ])
+
+    // Clean deliverable files from storage
+    const { data: oldDeliverables } = await supabase
+      .from('deliverables')
+      .select('storage_path')
+      .eq('mission_id', missionId)
+
+    if (oldDeliverables && oldDeliverables.length > 0) {
+      const paths = oldDeliverables.map((d) => d.storage_path).filter(Boolean) as string[]
+      if (paths.length > 0) {
+        await supabase.storage.from('deliverables').remove(paths)
+      }
+    }
+    await supabase.from('deliverables').delete().eq('mission_id', missionId)
+  }
+
+  // Get documents: from project (via document_ids) or legacy mission documents
+  let documents: Array<{
+    id: string; type: string; filename: string; storage_path: string;
+    file_size: number | null; status: string; mission_id?: string | null; project_id?: string | null;
+  }> | null = null
+
+  if (bodyData.document_ids && bodyData.document_ids.length > 0 && mission.project_id) {
+    // Project-based: fetch specific documents by IDs from the project
+    const { data: projectDocs, error: docsError } = await supabase
+      .from('documents')
+      .select('*')
+      .eq('project_id', mission.project_id)
+      .in('id', bodyData.document_ids)
+
+    if (docsError) {
+      return errorResponse('Erreur lors de la recuperation des documents.', 'INTERNAL_ERROR', 500)
+    }
+    documents = projectDocs
+  } else if (mission.project_id) {
+    // Project-based but no specific IDs: get all project documents
+    const { data: projectDocs, error: docsError } = await supabase
+      .from('documents')
+      .select('*')
+      .eq('project_id', mission.project_id)
+
+    if (docsError) {
+      return errorResponse('Erreur lors de la recuperation des documents.', 'INTERNAL_ERROR', 500)
+    }
+    documents = projectDocs
+  } else {
+    // Legacy: get documents directly from mission
+    const { data: missionDocs, error: docsError } = await supabase
+      .from('documents')
+      .select('*')
+      .eq('mission_id', missionId)
+
+    if (docsError) {
+      return errorResponse('Erreur lors de la recuperation des documents.', 'INTERNAL_ERROR', 500)
+    }
+    documents = missionDocs
   }
 
   if (!documents || documents.length === 0) {
     return errorResponse(
-      'Aucun document n\'a ete ajoute a cette mission. Ajoutez au moins un document avant de lancer la pre-analyse.',
+      'Aucun document disponible pour cette analyse. Ajoutez des documents au projet avant de lancer la pre-analyse.',
       'VALIDATION_ERROR',
       400
     )
@@ -89,8 +150,11 @@ export async function POST(
 
   // --- POINTAGE BYPASS: Local analysis without N8N ---
   if (mission.scenario === 'pointage') {
-    // Detect if real PDFs were uploaded (vs demo documents)
-    const isRealPdfs = await hasRealPdfUploads(supabase, missionId)
+    // Project-based missions: user-uploaded documents are always real.
+    // Demo pattern detection only applies to legacy missions without a project.
+    const isRealPdfs = mission.project_id
+      ? (documents && documents.length > 0)
+      : await hasRealPdfUploads(supabase, missionId)
 
     if (isRealPdfs || mission.company_id) {
       // Update status to analyzing
@@ -122,7 +186,8 @@ export async function POST(
           result = await analyzePointageFromRealPdfs(
             supabase,
             missionId,
-            session.license_id
+            session.license_id,
+            mission.project_id
           )
         } else {
           // Existing: Fictional company data
@@ -172,29 +237,38 @@ export async function POST(
 
   // --- CUTOFF BYPASS: Local analysis without N8N ---
   if (mission.scenario === 'cutoff') {
-    // Detect if real documents were uploaded (vs demo documents)
     const CUTOFF_DEMO_PATTERNS = [
       /^FEC_[a-z_]+_\d{4}\.txt$/i,
       /^(?:FAC|FRN|AV)-\d{4}-\d{4}\.pdf$/i,
       /^(?:BL|BR)-\d{4}-\d{4}\.pdf$/i,
     ]
     const CUTOFF_IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.tiff', '.tif']
-    const isRealCutoffDocs = documents!.some((doc) => {
+
+    // Detect if ALL documents match demo patterns (generated by cutoff-pdf-generator).
+    // If mission has a company_id and all docs are demo-generated, use the fast
+    // in-memory path which is deterministic and doesn't depend on LLM extraction.
+    const allDocsMatchDemoPatterns = documents!.every((doc) => {
+      return CUTOFF_DEMO_PATTERNS.some((pattern) => pattern.test(doc.filename))
+    })
+    const useDemoPath = mission.company_id && allDocsMatchDemoPatterns
+
+    const hasRealDocs = !useDemoPath && documents!.some((doc) => {
       const filename = doc.filename
       const isImage = CUTOFF_IMAGE_EXTENSIONS.some(ext => filename.toLowerCase().endsWith(ext))
       return isImage || !CUTOFF_DEMO_PATTERNS.some((pattern) => pattern.test(filename))
     })
+    const isRealCutoffDocs = !useDemoPath && (!!mission.project_id || hasRealDocs)
 
-    if (isRealCutoffDocs || mission.company_id) {
-      // Update status to analyzing
+    if (useDemoPath || isRealCutoffDocs || mission.company_id) {
       await supabase
         .from('missions')
         .update({ status: 'analyzing', updated_at: new Date().toISOString() })
         .eq('id', missionId)
 
-      // Create trace: analysis_started
       const actorNameCutoff = await getActorName(session.license_id)
-      const cutoffMode = isRealCutoffDocs ? 'documents réels (extraction FEC + PDF)' : 'données fictives'
+      const cutoffMode = useDemoPath
+        ? 'données de démonstration'
+        : isRealCutoffDocs ? 'documents réels (extraction FEC + PDF)' : 'données fictives'
       await createTrace({
         mission_id: missionId,
         license_id: session.license_id,
@@ -209,16 +283,25 @@ export async function POST(
       try {
         let result
 
-        if (isRealCutoffDocs) {
-          // Real document extraction + parsing
+        if (useDemoPath) {
+          // Demo documents from cutoff-pdf-generator: use in-memory company data
+          // (deterministic, includes injected discrepancies, no LLM dependency)
+          console.log(`[Analysis] Documents démo cutoff détectés — analyse in-memory pour ${mission.company_id}`)
+          result = await analyzeCutoffMission(
+            supabase,
+            missionId,
+            session.license_id,
+            mission.company_id!
+          )
+        } else if (isRealCutoffDocs) {
           console.log('[Analysis] Vrais documents cutoff détectés — lancement extraction FEC + PDF...')
           result = await analyzeCutoffFromDocuments(
             supabase,
             missionId,
-            session.license_id
+            session.license_id,
+            mission.project_id
           )
         } else {
-          // Fictional company data
           result = await analyzeCutoffMission(
             supabase,
             missionId,
@@ -283,7 +366,7 @@ export async function POST(
 
     documentRefs.push({
       id: doc.id,
-      type: doc.type,
+      type: doc.type as import('@/types/database').DocumentType,
       filename: doc.filename,
       download_url: signedUrlData.signedUrl,
     })
@@ -298,16 +381,9 @@ export async function POST(
     })
     .eq('id', missionId)
 
-  // Parse optional analysis options from request body
-  let analysisOptions: { cutoff_window_days?: number; priority_threshold?: SignalPriority } = {}
-  try {
-    const body = await req.json()
-    if (body.options) {
-      analysisOptions = body.options
-    }
-  } catch {
-    // No body or invalid JSON — proceed with default options
-  }
+  // Use analysis options from already-parsed body
+  const analysisOptions: { cutoff_window_days?: number; priority_threshold?: SignalPriority } =
+    (bodyData.options as { cutoff_window_days?: number; priority_threshold?: SignalPriority }) ?? {}
 
   // Create N8N client with the user's license key
   const n8n = createN8NClient(session.license_key)

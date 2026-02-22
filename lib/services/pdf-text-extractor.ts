@@ -124,15 +124,20 @@ export async function extractTextFromStoredImage(
 
 /**
  * Extrait le texte de tous les documents d'une mission (PDFs et images).
+ * Supporte les missions projet (lookup par project_id) et legacy (par mission_id).
  */
 export async function extractAllMissionPdfs(
   supabase: SupabaseClient,
-  missionId: string
+  missionId: string,
+  projectId?: string | null
 ): Promise<ExtractedPdf[]> {
-  const { data: documents, error } = await supabase
-    .from('documents')
-    .select('*')
-    .eq('mission_id', missionId)
+  let query = supabase.from('documents').select('*')
+  if (projectId) {
+    query = query.eq('project_id', projectId)
+  } else {
+    query = query.eq('mission_id', missionId)
+  }
+  const { data: documents, error } = await query
 
   if (error || !documents || documents.length === 0) {
     throw new Error(`Aucun document trouvé pour la mission ${missionId}`)

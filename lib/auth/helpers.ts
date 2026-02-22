@@ -71,6 +71,37 @@ export async function requireMissionOwnership(
 }
 
 // ---------------------------------------------------------------
+// Project ownership verification
+// ---------------------------------------------------------------
+
+/**
+ * Verifies that a project exists and belongs to the given license_id.
+ * Returns the project data if valid, throws a NextResponse 404 otherwise.
+ */
+export async function requireProjectOwnership(
+  projectId: string,
+  licenseId: string
+) {
+  const supabase = createServerSupabaseClient()
+
+  const { data: project, error } = await supabase
+    .from('projects')
+    .select('*')
+    .eq('id', projectId)
+    .eq('license_id', licenseId)
+    .single()
+
+  if (error || !project) {
+    throw NextResponse.json(
+      { error: 'Projet non trouve ou acces non autorise.', code: 'PROJECT_NOT_FOUND' },
+      { status: 404 }
+    )
+  }
+
+  return project
+}
+
+// ---------------------------------------------------------------
 // Profile helpers
 // ---------------------------------------------------------------
 

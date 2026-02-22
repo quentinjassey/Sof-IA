@@ -245,12 +245,13 @@ function buildRealCompleteness(
 export async function analyzePointageFromRealPdfs(
   supabase: SupabaseClient,
   missionId: string,
-  licenseId: string
+  licenseId: string,
+  projectId?: string | null
 ): Promise<RealAnalysisResult> {
   console.log(`[Real Analyzer] Début de l'analyse pour mission ${missionId}`)
 
   // 1. Extract text from all PDFs
-  const pdfs = await extractAllMissionPdfs(supabase, missionId)
+  const pdfs = await extractAllMissionPdfs(supabase, missionId, projectId)
 
   if (pdfs.length === 0) {
     throw new Error('Aucun PDF exploitable trouvé pour cette mission.')

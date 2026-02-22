@@ -1,19 +1,31 @@
 // app/api/missions/[id]/analysis/status/route.ts
-// GET: Poll analysis status from N8N
-// If N8N returns 'completed': fetch results, import to Supabase, update mission status
-// Returns current status + progress
+// GET: Poll analysis status
+//
+// For sondage_ca scenario (N8N-based):
+//   1. Reads n8n_analysis_state directly from Supabase (no N8N webhook needed)
+//   2. When status='completed' and results_json is present:
+//      → Transform N8N consolidation output → import into Supabase tables
+//      → Update mission status to 'analyzed'
+//   3. Returns current progress for the polling UI
+//
+// For pointage/cutoff (local analysis):
+//   Returns the mission status directly (no async polling needed)
 
 import { NextRequest } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
-import { createN8NClient } from '@/lib/n8n/client'
-import type { N8NStatusResponse, N8NResultsPayload } from '@/lib/n8n/types'
 import {
   requireSession,
   requireMissionOwnership,
+  getActorName,
   createTrace,
   errorResponse,
   successResponse,
 } from '@/lib/auth/helpers'
+import {
+  transformN8NResults,
+  type N8NResults,
+} from '@/lib/services/n8n-results-transformer'
+import { generateAllDeliverables } from '@/lib/services/deliverable-generator'
 
 // ---------------------------------------------------------------
 // GET /api/missions/[id]/analysis/status — Poll analysis status
@@ -39,7 +51,7 @@ export async function GET(
     return response as Response
   }
 
-  // If mission is already analyzed or completed, return stored results
+  // If mission is already analyzed or completed, return immediately
   if (['analyzed', 'in_review', 'completed'].includes(mission.status)) {
     return successResponse({
       status: 'completed',
@@ -98,7 +110,7 @@ export async function GET(
     })
   }
 
-  // Mission is in 'analyzing' state — poll N8N for status
+  // Mission is in 'analyzing' state — read progress from n8n_analysis_state
   const analysisId = mission.analysis_id
   if (!analysisId) {
     return errorResponse(
@@ -108,60 +120,100 @@ export async function GET(
     )
   }
 
-  // Create N8N client with the user's license key
-  const n8n = createN8NClient(session.license_key)
+  const supabase = createServerSupabaseClient()
 
-  let n8nStatus: N8NStatusResponse
-  try {
-    n8nStatus = await n8n.getAnalysisStatus(analysisId)
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue'
-    console.error('Erreur polling N8N status:', errorMessage)
+  // Read analysis state directly from Supabase (no N8N webhook needed)
+  const { data: analysisState, error: stateError } = await supabase
+    .from('n8n_analysis_state')
+    .select('*')
+    .eq('analysis_id', analysisId)
+    .single()
 
-    return successResponse({
-      status: 'analyzing',
-      progress: {
-        step: 'attente',
-        step_number: 0,
-        total_steps: 6,
-        percent: 0,
-        message: 'En attente de reponse du serveur d\'analyse...',
-      },
-    })
+  if (stateError || !analysisState) {
+    // Fallback: try by mission_id
+    const { data: fallbackState } = await supabase
+      .from('n8n_analysis_state')
+      .select('*')
+      .eq('mission_id', missionId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single()
+
+    if (!fallbackState) {
+      return successResponse({
+        status: 'analyzing',
+        progress: {
+          step: 'attente',
+          step_number: 0,
+          total_steps: 6,
+          percent: 0,
+          message: 'En attente du demarrage de l\'analyse...',
+        },
+      })
+    }
+
+    // Use fallback state
+    return handleAnalysisState(fallbackState, missionId, session.license_id)
   }
 
-  // If N8N reports completion, import results into Supabase
-  if (n8nStatus.status === 'completed') {
-    const supabase = createServerSupabaseClient()
+  return handleAnalysisState(analysisState, missionId, session.license_id)
+}
 
-    // Return 'importing' status immediately — the actual import
-    // happens here and the next poll will return 'completed'
+// ---------------------------------------------------------------
+// Handle analysis state from n8n_analysis_state table
+// ---------------------------------------------------------------
+
+interface AnalysisStateRow {
+  analysis_id: string
+  mission_id: string
+  status: string
+  current_step: number | null
+  current_step_key: string | null
+  progress_percent: number | null
+  progress_message: string | null
+  results_json: N8NResults | null
+  error_message: string | null
+  completed_at: string | null
+}
+
+async function handleAnalysisState(
+  state: AnalysisStateRow,
+  missionId: string,
+  licenseId: string
+) {
+  const supabase = createServerSupabaseClient()
+
+  // If N8N marked as completed AND results are present → import
+  if (state.status === 'completed' && state.results_json) {
     try {
-      // Fetch full results from N8N
-      const results = await n8n.getAnalysisResults(analysisId)
+      const transformed = transformN8NResults(state.results_json)
+      await importTransformedResults(missionId, licenseId, transformed)
 
-      // Import results into Supabase
-      await importResultsToSupabase(missionId, session.license_id, results)
+      // Generate all 4 deliverables (PDF/XLSX) and upload to Supabase Storage
+      let deliverablesGenerated = 0
+      try {
+        const deliverables = await generateAllDeliverables(supabase, missionId, licenseId)
+        deliverablesGenerated = deliverables.length
+      } catch (deliverableError) {
+        console.error('Erreur generation livrables (non-bloquante):', deliverableError)
+      }
 
       // Update mission status to 'analyzed'
       await supabase
         .from('missions')
-        .update({
-          status: 'analyzed',
-          updated_at: new Date().toISOString(),
-        })
+        .update({ status: 'analyzed', updated_at: new Date().toISOString() })
         .eq('id', missionId)
 
       // Create trace: analysis_completed
       await createTrace({
         mission_id: missionId,
-        license_id: session.license_id,
+        license_id: licenseId,
         actor: 'sofia',
         actor_name: "Sof'IA",
         action: 'analysis_completed',
         target_type: 'mission',
         target_id: missionId,
-        details: `Pre-analyse terminee. ${n8nStatus.results_summary?.signals_generated ?? 0} signaux detectes, ${n8nStatus.results_summary?.ecritures_parsed ?? 0} ecritures analysees.`,
+        details: `Pre-analyse terminee. ${transformed.signals.length} signaux detectes sur ${transformed.summary.pieces_testees} pieces testees. Couverture CA : ${transformed.summary.couverture_pct?.toFixed(2) || '?'}%. ${deliverablesGenerated} livrable(s) genere(s).`,
       })
 
       return successResponse({
@@ -173,25 +225,26 @@ export async function GET(
           percent: 100,
           message: 'Pre-analyse terminee. Resultats importes.',
         },
-        results_summary: n8nStatus.results_summary,
+        results_summary: {
+          signals_generated: transformed.signals.length,
+          ecritures_parsed: transformed.summary.total_ecritures_fec,
+          pieces_testees: transformed.summary.pieces_testees,
+          couverture_ca_pct: transformed.summary.couverture_pct,
+          deliverables_generated: deliverablesGenerated,
+        },
       })
     } catch (importError) {
       const errorMessage = importError instanceof Error ? importError.message : 'Erreur inconnue'
       console.error('Erreur import resultats N8N:', errorMessage)
 
-      // Mark mission as failed
       await supabase
         .from('missions')
-        .update({
-          status: 'analysis_failed',
-          updated_at: new Date().toISOString(),
-        })
+        .update({ status: 'analysis_failed', updated_at: new Date().toISOString() })
         .eq('id', missionId)
 
-      // Create trace: analysis_failed
       await createTrace({
         mission_id: missionId,
-        license_id: session.license_id,
+        license_id: licenseId,
         actor: 'sofia',
         actor_name: "Sof'IA",
         action: 'analysis_failed',
@@ -202,147 +255,156 @@ export async function GET(
 
       return successResponse({
         status: 'failed',
-        progress: {
-          step: 'erreur',
-          step_number: 0,
-          total_steps: 6,
-          percent: 0,
-          message: 'Erreur lors de l\'importation des resultats.',
-        },
+        progress: { step: 'erreur', step_number: 0, total_steps: 6, percent: 0, message: 'Erreur lors de l\'importation des resultats.' },
         error: 'L\'importation des resultats a echoue. Vous pouvez reessayer.',
       })
     }
   }
 
-  // If N8N reports failure
-  if (n8nStatus.status === 'failed') {
-    const supabase = createServerSupabaseClient()
+  // If N8N marked as completed but no results yet (edge case: completed_at is set)
+  if (state.current_step_key === 'termine' && !state.results_json) {
+    return successResponse({
+      status: 'analyzing',
+      progress: {
+        step: 'importation',
+        step_number: 6,
+        total_steps: 6,
+        percent: 95,
+        message: 'Finalisation et stockage des resultats...',
+      },
+    })
+  }
 
+  // If N8N reports failure
+  if (state.status === 'failed' || state.error_message) {
     await supabase
       .from('missions')
-      .update({
-        status: 'analysis_failed',
-        updated_at: new Date().toISOString(),
-      })
+      .update({ status: 'analysis_failed', updated_at: new Date().toISOString() })
       .eq('id', missionId)
 
     await createTrace({
       mission_id: missionId,
-      license_id: session.license_id,
+      license_id: licenseId,
       actor: 'sofia',
       actor_name: "Sof'IA",
       action: 'analysis_failed',
       target_type: 'mission',
       target_id: missionId,
-      details: `Pre-analyse echouee : ${n8nStatus.error ?? 'Erreur inconnue'}`,
+      details: `Pre-analyse echouee : ${state.error_message ?? 'Erreur inconnue'}`,
     })
 
     return successResponse({
       status: 'failed',
-      progress: n8nStatus.progress ?? {
+      progress: {
         step: 'erreur',
-        step_number: 0,
+        step_number: state.current_step ?? 0,
         total_steps: 6,
-        percent: 0,
-        message: 'La pre-analyse a echoue.',
+        percent: state.progress_percent ?? 0,
+        message: state.progress_message ?? 'La pre-analyse a echoue.',
       },
-      error: n8nStatus.error ?? 'L\'analyse a echoue. Vous pouvez relancer la pre-analyse.',
+      error: state.error_message ?? 'L\'analyse a echoue. Vous pouvez relancer la pre-analyse.',
     })
   }
 
-  // N8N is still processing — return progress
+  // Still processing — return current progress
   return successResponse({
     status: 'analyzing',
-    progress: n8nStatus.progress ?? {
-      step: 'traitement',
-      step_number: 1,
+    progress: {
+      step: state.current_step_key ?? 'traitement',
+      step_number: state.current_step ?? 1,
       total_steps: 6,
-      percent: 10,
-      message: 'Pre-analyse en cours...',
+      percent: state.progress_percent ?? 0,
+      message: state.progress_message ?? 'Pre-analyse en cours...',
     },
   })
 }
 
 // ---------------------------------------------------------------
-// Import N8N results into Supabase tables
+// Import transformed results into Supabase tables
 // ---------------------------------------------------------------
 
-async function importResultsToSupabase(
+async function importTransformedResults(
   missionId: string,
   licenseId: string,
-  results: N8NResultsPayload
+  transformed: ReturnType<typeof transformN8NResults>
 ): Promise<void> {
   const supabase = createServerSupabaseClient()
 
-  // 1. Import completeness entries
-  if (results.completeness && results.completeness.length > 0) {
-    const completenessRows = results.completeness.map((entry) => ({
-      mission_id: missionId,
-      license_id: licenseId,
-      doc_type: entry.type,
-      label: entry.label,
-      required: entry.required,
-      status: entry.status,
-      count: entry.count,
-      note: entry.note ?? null,
-    }))
+  // Find the FEC document for this mission
+  const { data: fecDoc } = await supabase
+    .from('documents')
+    .select('id')
+    .eq('mission_id', missionId)
+    .eq('type', 'fec')
+    .limit(1)
+    .single()
 
-    const { error: completenessError } = await supabase
-      .from('completeness')
-      .insert(completenessRows)
+  // If not found by mission_id, try by project_id
+  let fecDocId = fecDoc?.id ?? null
+  if (!fecDocId) {
+    const { data: missionData } = await supabase
+      .from('missions')
+      .select('project_id')
+      .eq('id', missionId)
+      .single()
 
-    if (completenessError) {
-      console.error('Erreur import completeness:', completenessError.message)
+    if (missionData?.project_id) {
+      const { data: projectFec } = await supabase
+        .from('documents')
+        .select('id')
+        .eq('project_id', missionData.project_id)
+        .eq('type', 'fec')
+        .limit(1)
+        .single()
+      fecDocId = projectFec?.id ?? null
     }
   }
 
-  // 2. Import ecritures (FEC entries)
-  // We need to map N8N ecriture IDs to new Supabase UUIDs
-  const ecritureIdMap: Record<string, string> = {}
-
-  if (results.ecritures && results.ecritures.length > 0) {
-    // Find the FEC document in the mission to link ecritures
-    const { data: fecDoc } = await supabase
-      .from('documents')
-      .select('id')
-      .eq('mission_id', missionId)
-      .eq('type', 'fec')
-      .limit(1)
-      .single()
-
-    const ecritureRows = results.ecritures.map((entry) => ({
+  // 1. Import completeness
+  if (transformed.completeness.length > 0) {
+    const rows = transformed.completeness.map((c) => ({
       mission_id: missionId,
       license_id: licenseId,
-      document_id: fecDoc?.id ?? null,
-      journal_code: entry.journal_code,
-      journal_lib: entry.journal_lib,
-      ecriture_num: entry.ecriture_num,
-      ecriture_date: entry.ecriture_date,
-      compte_num: entry.compte_num,
-      compte_lib: entry.compte_lib,
-      comp_aux_num: entry.comp_aux_num,
-      comp_aux_lib: entry.comp_aux_lib,
-      piece_ref: entry.piece_ref,
-      piece_date: entry.piece_date,
-      ecriture_lib: entry.ecriture_lib,
-      debit: entry.debit,
-      credit: entry.credit,
-      lettrage: entry.lettrage,
-      date_lettrage: entry.date_lettrage,
-      valid_date: entry.valid_date,
+      doc_type: c.doc_type,
+      label: c.label,
+      required: c.required,
+      status: c.status,
+      count: c.count,
+      note: c.note,
     }))
 
-    const { data: insertedEcritures, error: ecrituresError } = await supabase
+    const { error } = await supabase.from('completeness').insert(rows)
+    if (error) console.error('Erreur import completeness:', error.message)
+  }
+
+  // 2. Import ecritures (sampled entries)
+  const ecritureIdMap: Record<string, string> = {}
+
+  if (transformed.ecritures.length > 0) {
+    const rows = transformed.ecritures.map((e) => ({
+      mission_id: missionId,
+      license_id: licenseId,
+      document_id: fecDocId,
+      journal_code: e.journal_code,
+      ecriture_date: e.ecriture_date,
+      compte_num: e.compte_num,
+      piece_ref: e.piece_ref,
+      ecriture_lib: e.ecriture_lib,
+      debit: e.debit,
+      credit: e.credit,
+    }))
+
+    const { data: inserted, error } = await supabase
       .from('ecritures')
-      .insert(ecritureRows)
+      .insert(rows)
       .select('id')
 
-    if (ecrituresError) {
-      console.error('Erreur import ecritures:', ecrituresError.message)
-    } else if (insertedEcritures) {
-      // Map N8N IDs to Supabase IDs
-      for (let i = 0; i < results.ecritures.length && i < insertedEcritures.length; i++) {
-        ecritureIdMap[results.ecritures[i].id] = insertedEcritures[i].id
+    if (error) {
+      console.error('Erreur import ecritures:', error.message)
+    } else if (inserted) {
+      for (let i = 0; i < transformed.ecritures.length && i < inserted.length; i++) {
+        const ref = transformed.ecritures[i].piece_ref
+        if (ref) ecritureIdMap[ref] = inserted[i].id
       }
     }
   }
@@ -350,131 +412,126 @@ async function importResultsToSupabase(
   // 3. Import rapprochements
   const rapprochementIdMap: Record<string, string> = {}
 
-  if (results.rapprochements && results.rapprochements.length > 0) {
-    const rapprochementRows = results.rapprochements.map((entry) => ({
-      mission_id: missionId,
-      license_id: licenseId,
-      ecriture_id: ecritureIdMap[entry.ecriture_id] ?? entry.ecriture_id,
-      document_id: entry.document_id,
-      match_type: entry.match_type,
-      match_details: entry.match_details,
-      confidence: entry.confidence,
-      created_by: 'sofia',
-    }))
+  if (transformed.rapprochements.length > 0) {
+    const rows = transformed.rapprochements.map((r) => {
+      const ecritureId = ecritureIdMap[r.piece_ref] ?? null
+      return {
+        mission_id: missionId,
+        license_id: licenseId,
+        ecriture_id: ecritureId,
+        document_id: null,
+        match_type: r.match_type,
+        match_details: r.match_details,
+        confidence: r.confidence,
+        created_by: 'sofia',
+      }
+    })
 
-    const { data: insertedRapprochements, error: rapprError } = await supabase
-      .from('rapprochements')
-      .insert(rapprochementRows)
-      .select('id')
+    // Only insert rows with valid ecriture_id (FK constraint)
+    const validRows = rows.filter((r) => r.ecriture_id !== null)
+    if (validRows.length > 0) {
+      const { data: inserted, error } = await supabase
+        .from('rapprochements')
+        .insert(validRows)
+        .select('id')
 
-    if (rapprError) {
-      console.error('Erreur import rapprochements:', rapprError.message)
-    } else if (insertedRapprochements) {
-      for (let i = 0; i < results.rapprochements.length && i < insertedRapprochements.length; i++) {
-        rapprochementIdMap[results.rapprochements[i].id] = insertedRapprochements[i].id
+      if (error) {
+        console.error('Erreur import rapprochements:', error.message)
+      } else if (inserted) {
+        for (let i = 0; i < validRows.length && i < inserted.length; i++) {
+          const ref = transformed.rapprochements[i]?.piece_ref
+          if (ref) rapprochementIdMap[ref] = inserted[i].id
+        }
       }
     }
   }
 
   // 4. Import signals
-  if (results.signals && results.signals.length > 0) {
-    const signalRows = results.signals.map((signal) => ({
-      mission_id: missionId,
-      license_id: licenseId,
-      document_id: signal.document_id,
-      ecriture_id: signal.ecriture_id ? (ecritureIdMap[signal.ecriture_id] ?? signal.ecriture_id) : null,
-      rapprochement_id: signal.rapprochement_id ? (rapprochementIdMap[signal.rapprochement_id] ?? signal.rapprochement_id) : null,
-      type: signal.type,
-      description: signal.description,
-      source_document: signal.source_document,
-      source_page: signal.source_page,
-      source_extract: signal.source_extract,
-      rule_triggered: signal.rule_triggered,
-      rule_description: signal.rule_description,
-      priority: signal.priority,
-      explicability: signal.explicability,
-      human_decision: 'pending' as const,
-      human_comment: null,
-      decided_at: null,
-    }))
+  if (transformed.signals.length > 0) {
+    const rows = transformed.signals.map((s) => {
+      const pieceRef = s.source_extract?.match(/Piece\s+(\d+)/)?.[1]
+        || s.description?.match(/Piece\s+(\d+)/)?.[1]
+        || null
 
-    const { error: signalsError } = await supabase
-      .from('signals')
-      .insert(signalRows)
+      return {
+        mission_id: missionId,
+        license_id: licenseId,
+        document_id: null,
+        ecriture_id: pieceRef ? (ecritureIdMap[pieceRef] ?? null) : null,
+        rapprochement_id: pieceRef ? (rapprochementIdMap[pieceRef] ?? null) : null,
+        type: s.type,
+        description: s.description,
+        source_document: s.source_document,
+        source_page: s.source_page,
+        source_extract: s.source_extract,
+        rule_triggered: s.rule_triggered,
+        rule_description: s.rule_description,
+        priority: s.priority,
+        explicability: s.explicability,
+        human_decision: 'pending' as const,
+        human_comment: null,
+        decided_at: null,
+        confidence_score: s.confidence_score,
+      }
+    })
 
-    if (signalsError) {
-      console.error('Erreur import signals:', signalsError.message)
-    }
+    const { error } = await supabase.from('signals').insert(rows)
+    if (error) console.error('Erreur import signals:', error.message)
   }
 
-  // 5. Import deliverables (files to Storage + metadata to DB)
-  if (results.deliverables && results.deliverables.length > 0) {
-    for (const deliverable of results.deliverables) {
-      let storagePath: string | null = null
-
-      // Upload base64 file to Supabase Storage
-      if (deliverable.file_base64) {
-        const extension = deliverable.format === 'xlsx' ? 'xlsx' : 'pdf'
-        storagePath = `deliverables/${missionId}/${deliverable.type}.${extension}`
-
-        const fileBuffer = Buffer.from(deliverable.file_base64, 'base64')
-        const contentType = deliverable.format === 'xlsx'
-          ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-          : 'application/pdf'
-
-        const { error: uploadError } = await supabase.storage
-          .from('deliverables')
-          .upload(storagePath, fileBuffer, {
-            contentType,
-            upsert: true,
-          })
-
-        if (uploadError) {
-          console.error(`Erreur upload livrable ${deliverable.type}:`, uploadError.message)
-          storagePath = null
-        }
-      }
-
-      // Insert deliverable metadata
-      const { error: delivInsertError } = await supabase
-        .from('deliverables')
-        .insert({
-          mission_id: missionId,
-          license_id: licenseId,
-          type: deliverable.type,
-          format: deliverable.format,
-          title: deliverable.title,
-          generated_at: new Date().toISOString(),
-          content_json: deliverable.content_json,
-          storage_path: storagePath,
-        })
-
-      if (delivInsertError) {
-        console.error(`Erreur insertion livrable ${deliverable.type}:`, delivInsertError.message)
-      }
-    }
-  }
-
-  // 6. Import traces (Sofia actions)
-  if (results.traces && results.traces.length > 0) {
-    const traceRows = results.traces.map((trace) => ({
+  // 5. Store synthesis as deliverable content_json (no file generation yet)
+  if (transformed.synthesis) {
+    const { error } = await supabase.from('deliverables').insert({
       mission_id: missionId,
       license_id: licenseId,
-      timestamp: trace.timestamp,
-      actor: trace.actor || 'sofia',
+      type: 'synthese_preanalyse',
+      format: 'pdf',
+      title: 'Synthese de pre-analyse — Sondage du chiffre d\'affaires',
+      generated_at: new Date().toISOString(),
+      content_json: {
+        synthesis_text: transformed.synthesis,
+        summary: transformed.summary,
+        generated_by: 'n8n_sondage',
+      },
+      storage_path: null,
+    })
+    if (error) console.error('Erreur insert deliverable synthese:', error.message)
+  }
+
+  // 6. Create import traces
+  const traces = [
+    {
+      mission_id: missionId,
+      license_id: licenseId,
+      actor: 'sofia' as const,
       actor_name: "Sof'IA",
-      action: trace.action,
+      action: 'fec_parsed' as const,
       target_type: 'mission' as const,
       target_id: missionId,
-      details: trace.details,
-    }))
+      details: `FEC analyse : ${transformed.summary.total_ecritures_fec} lignes, CA total ${transformed.summary.ca_total.toLocaleString('fr-FR')} EUR.`,
+    },
+    {
+      mission_id: missionId,
+      license_id: licenseId,
+      actor: 'sofia' as const,
+      actor_name: "Sof'IA",
+      action: 'rapprochement_completed' as const,
+      target_type: 'mission' as const,
+      target_id: missionId,
+      details: `Rapprochement termine : ${transformed.rapprochements.length} pieces testees (${transformed.summary.methode_echantillonnage}).`,
+    },
+    {
+      mission_id: missionId,
+      license_id: licenseId,
+      actor: 'sofia' as const,
+      actor_name: "Sof'IA",
+      action: 'signals_generated' as const,
+      target_type: 'mission' as const,
+      target_id: missionId,
+      details: `${transformed.signals.length} signaux documentaires detectes sur ${transformed.summary.pieces_testees} pieces testees.`,
+    },
+  ]
 
-    const { error: tracesError } = await supabase
-      .from('traces')
-      .insert(traceRows)
-
-    if (tracesError) {
-      console.error('Erreur import traces:', tracesError.message)
-    }
-  }
+  const { error: tracesError } = await supabase.from('traces').insert(traces)
+  if (tracesError) console.error('Erreur import traces:', tracesError.message)
 }

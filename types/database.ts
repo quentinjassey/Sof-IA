@@ -126,10 +126,21 @@ export interface Profile {
   updated_at: string | null;
 }
 
+/** Project table row — groups documents and missions for a client */
+export interface Project {
+  id: string;
+  license_id: string;
+  name: string;
+  description: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 /** Mission table row */
 export interface Mission {
   id: string;
   license_id: string;
+  project_id: string | null;
   name: string;
   scenario: ScenarioType;
   status: MissionStatus;
@@ -142,7 +153,8 @@ export interface Mission {
 /** Document table row */
 export interface Document {
   id: string;
-  mission_id: string;
+  mission_id: string | null;
+  project_id: string | null;
   type: DocumentType;
   filename: string;
   storage_path: string;
@@ -292,9 +304,19 @@ export interface ProfileInsert {
   updated_at?: string | null;
 }
 
+export interface ProjectInsert {
+  id?: string;
+  license_id: string;
+  name: string;
+  description?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface MissionInsert {
   id?: string;
   license_id: string;
+  project_id?: string | null;
   name: string;
   scenario: ScenarioType;
   status?: MissionStatus;
@@ -306,7 +328,8 @@ export interface MissionInsert {
 
 export interface DocumentInsert {
   id?: string;
-  mission_id: string;
+  mission_id?: string | null;
+  project_id?: string | null;
   type: DocumentType;
   filename: string;
   storage_path: string;
@@ -430,8 +453,15 @@ export interface ProfileUpdate {
   updated_at?: string;
 }
 
+export interface ProjectUpdate {
+  name?: string;
+  description?: string | null;
+  updated_at?: string;
+}
+
 export interface MissionUpdate {
   name?: string;
+  project_id?: string | null;
   scenario?: ScenarioType;
   status?: MissionStatus;
   analysis_id?: string | null;
@@ -477,6 +507,11 @@ export interface Database {
         Row: Profile;
         Insert: ProfileInsert;
         Update: ProfileUpdate;
+      };
+      projects: {
+        Row: Project;
+        Insert: ProjectInsert;
+        Update: ProjectUpdate;
       };
       missions: {
         Row: Mission;

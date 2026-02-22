@@ -222,13 +222,14 @@ export async function analyzeCutoffMission(
 export async function analyzeCutoffFromDocuments(
   supabase: SupabaseClient,
   missionId: string,
-  licenseId: string
+  licenseId: string,
+  projectId?: string | null
 ): Promise<AnalysisResult> {
   // Dynamic import to avoid circular dependency at module load time
   const { fetchAndParseAllCutoffDocuments } = await import('./cutoff-document-parser')
 
   console.log(`[Cutoff] Parsing real documents for mission ${missionId.slice(0, 8)}...`)
-  const parsed = await fetchAndParseAllCutoffDocuments(supabase, missionId)
+  const parsed = await fetchAndParseAllCutoffDocuments(supabase, missionId, projectId)
 
   const docSet: CutoffDocumentSet = {
     name: parsed.companyName || 'Entreprise (documents uploadés)',

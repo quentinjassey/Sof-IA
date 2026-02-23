@@ -5,7 +5,7 @@
 // =============================================================================
 
 import { SupabaseClient } from '@supabase/supabase-js'
-import { ensureDOMMatrix } from '@/lib/polyfills/dom-matrix'
+import { preparePdfRuntime } from '@/lib/polyfills/dom-matrix'
 import { extractTextViaVision } from './ocr-service'
 
 // -----------------------------------------------------------------------------
@@ -54,7 +54,7 @@ export async function extractTextFromStoredPdf(
   const buffer = Buffer.from(await data.arrayBuffer())
   const uint8 = new Uint8Array(buffer)
 
-  ensureDOMMatrix()
+  await preparePdfRuntime()
   const { PDFParse } = await import('pdf-parse')
   const parser = new PDFParse({ data: uint8 })
   let text = ''

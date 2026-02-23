@@ -17,7 +17,7 @@ import type {
   CutoffInvoice,
   DeliveryNote,
 } from '@/lib/config/cutoff-companies'
-import { ensureDOMMatrix } from '@/lib/polyfills/dom-matrix'
+import { preparePdfRuntime } from '@/lib/polyfills/dom-matrix'
 import { extractTextViaVision } from './ocr-service'
 
 const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.tiff', '.tif']
@@ -52,7 +52,7 @@ function fecDateToISO(yyyymmdd: string): string {
 /** Extract text from a PDF buffer using pdf-parse */
 async function extractPdfText(buffer: Buffer): Promise<string> {
   const uint8 = new Uint8Array(buffer)
-  ensureDOMMatrix()
+  await preparePdfRuntime()
   const { PDFParse } = await import('pdf-parse')
   const parser = new PDFParse({ data: uint8 })
   try {

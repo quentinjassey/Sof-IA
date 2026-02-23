@@ -18,7 +18,6 @@ import type {
   DeliveryNote,
 } from '@/lib/config/cutoff-companies'
 import { extractTextViaVision } from './ocr-service'
-import { PDFParse } from 'pdf-parse'
 
 const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.tiff', '.tif']
 
@@ -52,6 +51,7 @@ function fecDateToISO(yyyymmdd: string): string {
 /** Extract text from a PDF buffer using pdf-parse */
 async function extractPdfText(buffer: Buffer): Promise<string> {
   const uint8 = new Uint8Array(buffer)
+  const { PDFParse } = await import('pdf-parse')
   const parser = new PDFParse({ data: uint8 })
   try {
     const result = await parser.getText()

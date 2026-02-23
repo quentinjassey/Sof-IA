@@ -30,11 +30,6 @@ const mainNavItems: NavItem[] = [
     icon: <FolderOpen className="h-[18px] w-[18px]" />,
   },
   {
-    label: 'Missions',
-    href: '/missions',
-    icon: <BarChart3 className="h-[18px] w-[18px]" />,
-  },
-  {
     label: 'Paramètres',
     href: '/settings',
     icon: <SettingsIcon className="h-[18px] w-[18px]" />,
@@ -74,6 +69,7 @@ function getMissionSubNav(missionId: string): NavItem[] {
 function getProjectMissionSubNav(projectId: string, missionId: string): NavItem[] {
   const base = `/projects/${projectId}/missions/${missionId}`
   return [
+    { label: 'Analyse', href: `${base}/analysis`, icon: <BarChart3 className="h-4 w-4" /> },
     { label: 'Signaux', href: `${base}/signals`, icon: <AlertTriangle className="h-4 w-4" /> },
     { label: 'Livrables', href: `${base}/deliverables`, icon: <FileCheck className="h-4 w-4" /> },
     { label: 'Traçabilité', href: `${base}/traces`, icon: <Clock className="h-4 w-4" /> },

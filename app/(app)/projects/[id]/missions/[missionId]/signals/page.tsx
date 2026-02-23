@@ -13,7 +13,7 @@ import DisclaimerBanner from '@/components/ui/DisclaimerBanner'
 import SignalCard from '@/components/signals/SignalCard'
 import { Badge } from '@/components/ui/Badge'
 import { cn } from '@/lib/utils'
-import type { Signal, SignalPriority, HumanDecision, SignalType } from '@/types/database'
+import type { Signal, SignalPriority, HumanDecision } from '@/types/database'
 
 interface SignalStats {
   total: number
@@ -28,29 +28,29 @@ interface PaginationMeta {
   total_pages: number
 }
 
-const priorityFilterOptions = [
-  { value: '', label: 'Toutes priorites' },
-  { value: 'high', label: 'Elevee' },
+const priorityFilterOptions: { value: string; label: string }[] = [
+  { value: '', label: 'Toutes priorités' },
+  { value: 'high', label: 'Élevée' },
   { value: 'medium', label: 'Moyenne' },
   { value: 'low', label: 'Faible' },
 ]
 
-const typeFilterOptions = [
+const typeFilterOptions: { value: string; label: string }[] = [
   { value: '', label: 'Tous types' },
-  { value: 'absence_piece', label: 'Piece justificative manquante' },
-  { value: 'incoherence_date', label: 'Incoherence de dates' },
-  { value: 'incoherence_montant', label: 'Ecart de montant' },
-  { value: 'rupture_chaine', label: 'Rupture de la chaine documentaire' },
+  { value: 'absence_piece', label: 'Pièce justificative manquante' },
+  { value: 'incoherence_date', label: 'Incohérence de dates' },
+  { value: 'incoherence_montant', label: 'Écart de montant' },
+  { value: 'rupture_chaine', label: 'Rupture de la chaîne documentaire' },
   { value: 'rattachement_temporel', label: 'Doute sur le rattachement temporel' },
-  { value: 'incompletude', label: 'Information incomplete' },
+  { value: 'incompletude', label: 'Information incomplète' },
 ]
 
-const decisionFilterOptions = [
-  { value: '', label: 'Toutes decisions' },
+const decisionFilterOptions: { value: string; label: string }[] = [
+  { value: '', label: 'Tous statuts' },
   { value: 'pending', label: 'En attente' },
-  { value: 'validated', label: 'Valide' },
-  { value: 'rejected', label: 'Rejete' },
-  { value: 'to_investigate', label: 'A approfondir' },
+  { value: 'validated', label: 'Validé' },
+  { value: 'rejected', label: 'Rejeté' },
+  { value: 'to_investigate', label: 'À approfondir' },
 ]
 
 export default function ProjectSignalsPage({
@@ -64,137 +64,211 @@ export default function ProjectSignalsPage({
 
   const [signals, setSignals] = useState<Signal[]>([])
   const [stats, setStats] = useState<SignalStats | null>(null)
-  const [pagination, setPagination] = useState<PaginationMeta | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [page, setPage] = useState(1)
+  const [meta, setMeta] = useState<PaginationMeta | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
   const [priorityFilter, setPriorityFilter] = useState('')
   const [typeFilter, setTypeFilter] = useState('')
   const [decisionFilter, setDecisionFilter] = useState('')
+  const [page, setPage] = useState(1)
 
   const fetchSignals = useCallback(async () => {
-    setIsLoading(true)
-    try {
-      const params = new URLSearchParams({ page: page.toString(), per_page: '20' })
-      if (priorityFilter) params.set('priority', priorityFilter)
-      if (typeFilter) params.set('type', typeFilter)
-      if (decisionFilter) params.set('decision', decisionFilter)
+    setLoading(true)
+    setError(null)
 
-      const res = await fetch(`/api/missions/${missionId}/signals?${params}`)
+    try {
+      const queryParams = new URLSearchParams()
+      if (priorityFilter) queryParams.set('priority', priorityFilter)
+      if (typeFilter) queryParams.set('type', typeFilter)
+      if (decisionFilter) queryParams.set('decision', decisionFilter)
+      queryParams.set('page', String(page))
+      queryParams.set('per_page', '20')
+      queryParams.set('sort', '-priority')
+
+      const res = await fetch(`/api/missions/${missionId}/signals?${queryParams.toString()}`)
+      if (!res.ok) throw new Error('Erreur lors du chargement des signaux.')
+
+      const json = await res.json()
+      setSignals(json.data || [])
+      setMeta(json.meta || null)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur interne.')
+    } finally {
+      setLoading(false)
+    }
+  }, [missionId, priorityFilter, typeFilter, decisionFilter, page])
+
+  const fetchStats = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/missions/${missionId}/signals/stats`)
       if (res.ok) {
         const json = await res.json()
-        if (json.data) {
-          setSignals(json.data.signals ?? json.data)
-          setStats(json.data.stats ?? null)
-          setPagination(json.data.pagination ?? null)
-        }
+        setStats(json.data || null)
       }
     } catch {
-      // Silent
-    } finally {
-      setIsLoading(false)
+      // Non-critical
     }
-  }, [missionId, page, priorityFilter, typeFilter, decisionFilter])
+  }, [missionId])
 
   useEffect(() => {
     fetchSignals()
-  }, [fetchSignals])
+    fetchStats()
+  }, [fetchSignals, fetchStats])
+
+  const totalSignals = stats?.total ?? meta?.total ?? signals.length
+  const highCount = stats?.by_priority?.high ?? signals.filter((s) => s.priority === 'high').length
+  const mediumCount = stats?.by_priority?.medium ?? signals.filter((s) => s.priority === 'medium').length
+  const lowCount = stats?.by_priority?.low ?? signals.filter((s) => s.priority === 'low').length
+  const pendingCount = stats?.by_decision?.pending ?? signals.filter((s) => s.human_decision === 'pending').length
+  const validatedCount = stats?.by_decision?.validated ?? signals.filter((s) => s.human_decision === 'validated').length
+  const rejectedCount = stats?.by_decision?.rejected ?? signals.filter((s) => s.human_decision === 'rejected').length
+  const investigateCount = stats?.by_decision?.to_investigate ?? signals.filter((s) => s.human_decision === 'to_investigate').length
 
   return (
-    <div className="mx-auto max-w-5xl p-6 lg:p-8">
+    <div className={cn('mx-auto max-w-5xl space-y-6 p-6 lg:p-8', 'animate-fade-in')}>
+      {/* Header */}
+      <div>
+        <div className="flex items-center gap-3">
+          <AlertTriangle className="h-6 w-6 text-amber-500" />
+          <div>
+            <h1 className="font-serif text-2xl tracking-tight text-foreground">
+              Signaux documentaires détectés
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {totalSignals} signal{totalSignals !== 1 ? 'x' : ''} identifié{totalSignals !== 1 ? 's' : ''} lors de la pré-analyse
+            </p>
+          </div>
+        </div>
+      </div>
+
       <DisclaimerBanner />
 
-      <div className="mt-6">
-        <div className="mb-6 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <AlertTriangle className="h-6 w-6 text-warning-foreground" />
-            <div>
-              <h2 className="font-serif text-xl text-foreground">Signaux documentaires</h2>
-              <p className="text-xs text-muted-foreground">
-                {stats ? `${stats.total} signal${stats.total !== 1 ? 'aux' : ''} detecte${stats.total !== 1 ? 's' : ''}` : ''}
-              </p>
-            </div>
-          </div>
+      {/* Stats grid */}
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <div className="rounded-xl border border-border bg-card px-4 py-3">
+          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Priorité élevée</p>
+          <p className="mt-1 text-2xl font-bold text-destructive">{highCount}</p>
         </div>
+        <div className="rounded-xl border border-border bg-card px-4 py-3">
+          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Priorité moyenne</p>
+          <p className="mt-1 text-2xl font-bold text-warning-foreground">{mediumCount}</p>
+        </div>
+        <div className="rounded-xl border border-border bg-card px-4 py-3">
+          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">En attente</p>
+          <p className="mt-1 text-2xl font-bold text-muted-foreground">{pendingCount}</p>
+        </div>
+        <div className="rounded-xl border border-border bg-card px-4 py-3">
+          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Décidés</p>
+          <p className="mt-1 text-2xl font-bold text-success">{validatedCount + rejectedCount + investigateCount}</p>
+        </div>
+      </div>
 
-        {/* Stats */}
-        {stats && (
-          <div className="mb-6 flex gap-3">
-            <Badge variant={stats.by_decision.pending > 0 ? 'pending' : 'outline'}>
-              {stats.by_decision.pending ?? 0} en attente
-            </Badge>
-            <Badge variant="validated">{stats.by_decision.validated ?? 0} valide(s)</Badge>
-            <Badge variant="destructive">{stats.by_decision.rejected ?? 0} rejete(s)</Badge>
-            <Badge variant="to-investigate">{stats.by_decision.to_investigate ?? 0} a approfondir</Badge>
-          </div>
-        )}
+      {/* Summary badges */}
+      <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+        <span>Résumé :</span>
+        <Badge variant="priority-high">{highCount} élevée{highCount !== 1 ? 's' : ''}</Badge>
+        <Badge variant="priority-medium">{mediumCount} moyenne{mediumCount !== 1 ? 's' : ''}</Badge>
+        <Badge variant="priority-low">{lowCount} faible{lowCount !== 1 ? 's' : ''}</Badge>
+        <span className="text-border">|</span>
+        <Badge variant="pending">{pendingCount} en attente</Badge>
+        <Badge variant="validated">{validatedCount} validé{validatedCount !== 1 ? 's' : ''}</Badge>
+        <Badge variant="rejected">{rejectedCount} rejeté{rejectedCount !== 1 ? 's' : ''}</Badge>
+        <Badge variant="to-investigate">{investigateCount} à approfondir</Badge>
+      </div>
 
-        {/* Filters */}
-        <div className="mb-4 flex flex-wrap items-center gap-2">
-          <Filter className="h-4 w-4 text-muted-foreground" />
-          {[
-            { options: priorityFilterOptions, value: priorityFilter, onChange: setPriorityFilter },
-            { options: typeFilterOptions, value: typeFilter, onChange: setTypeFilter },
-            { options: decisionFilterOptions, value: decisionFilter, onChange: setDecisionFilter },
-          ].map((filter, i) => (
-            <select
-              key={i}
-              value={filter.value}
-              onChange={(e) => { filter.onChange(e.target.value); setPage(1) }}
-              className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs text-foreground"
-            >
-              {filter.options.map((opt) => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
+      {/* Filters */}
+      <div className="flex flex-wrap items-center gap-3">
+        <Filter className="h-4 w-4 text-muted-foreground" />
+        <span className="text-sm font-medium text-muted-foreground">Filtres :</span>
+        <select
+          value={priorityFilter}
+          onChange={(e) => { setPriorityFilter(e.target.value); setPage(1) }}
+          className="rounded-lg border border-input bg-card px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+        >
+          {priorityFilterOptions.map((opt) => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
+        </select>
+        <select
+          value={typeFilter}
+          onChange={(e) => { setTypeFilter(e.target.value); setPage(1) }}
+          className="rounded-lg border border-input bg-card px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+        >
+          {typeFilterOptions.map((opt) => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
+        </select>
+        <select
+          value={decisionFilter}
+          onChange={(e) => { setDecisionFilter(e.target.value); setPage(1) }}
+          className="rounded-lg border border-input bg-card px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+        >
+          {decisionFilterOptions.map((opt) => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Signal list */}
+      {loading ? (
+        <div className="flex items-center justify-center py-16">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      ) : error ? (
+        <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-6 text-center">
+          <p className="text-sm text-destructive">{error}</p>
+        </div>
+      ) : signals.length === 0 ? (
+        <div className="rounded-xl border border-border bg-card px-6 py-10 text-center">
+          <AlertTriangle className={cn('mx-auto h-10 w-10', 'text-muted-foreground/40')} />
+          <p className="mt-3 text-sm font-medium text-muted-foreground">
+            Aucun signal documentaire ne correspond aux filtres sélectionnés.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {signals.map((signal, index) => (
+            <SignalCard
+              key={signal.id}
+              signal={signal}
+              index={(meta?.page ? (meta.page - 1) * (meta.per_page || 20) : 0) + index + 1}
+              onClick={() => router.push(`${basePath}/signals/${signal.id}`)}
+            />
           ))}
         </div>
+      )}
 
-        {/* Signal list */}
-        {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-6 w-6 animate-spin text-primary" />
-          </div>
-        ) : signals.length === 0 ? (
-          <div className="rounded-xl border border-border bg-card py-12 text-center">
-            <p className="text-sm text-muted-foreground">Aucun signal ne correspond aux filtres.</p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {signals.map((signal, index) => (
-              <div
-                key={signal.id}
-                onClick={() => router.push(`${basePath}/signals/${signal.id}`)}
-                className="cursor-pointer"
-              >
-                <SignalCard signal={signal} index={index} />
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Pagination */}
-        {pagination && pagination.total_pages > 1 && (
-          <div className="mt-6 flex items-center justify-center gap-3">
+      {/* Pagination */}
+      {meta && meta.total_pages > 1 && (
+        <div className="flex items-center justify-between rounded-xl border border-border bg-card px-4 py-3">
+          <p className="text-sm text-muted-foreground">
+            Page {meta.page} sur {meta.total_pages} ({meta.total} signaux)
+          </p>
+          <div className="flex items-center gap-2">
             <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              onClick={() => setPage(Math.max(1, page - 1))}
               disabled={page <= 1}
-              className="rounded-lg border border-border p-2 disabled:opacity-30"
+              className={cn(
+                'rounded-md border border-border p-1.5 text-muted-foreground transition-colors',
+                'hover:bg-accent disabled:cursor-not-allowed disabled:opacity-40'
+              )}
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
-            <span className="text-sm text-muted-foreground">
-              Page {page} / {pagination.total_pages}
-            </span>
             <button
-              onClick={() => setPage((p) => Math.min(pagination.total_pages, p + 1))}
-              disabled={page >= pagination.total_pages}
-              className="rounded-lg border border-border p-2 disabled:opacity-30"
+              onClick={() => setPage(Math.min(meta.total_pages, page + 1))}
+              disabled={page >= meta.total_pages}
+              className={cn(
+                'rounded-md border border-border p-1.5 text-muted-foreground transition-colors',
+                'hover:bg-accent disabled:cursor-not-allowed disabled:opacity-40'
+              )}
             >
               <ChevronRight className="h-4 w-4" />
             </button>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   )
 }

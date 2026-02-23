@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils'
 import DisclaimerBanner from '@/components/ui/DisclaimerBanner'
 import AnalysisCard from '@/components/projects/AnalysisCard'
 import AnalysisLauncher from '@/components/projects/AnalysisLauncher'
+import { CompanyLogo, extractCompanyFromTitle } from '@/components/missions/CompanyLogo'
 import { useProjectContext } from './layout'
 import type { ScenarioType, Mission } from '@/types/database'
 
@@ -178,7 +179,7 @@ export default function ProjectDetailPage() {
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-1">
-          <FolderOpen className="h-6 w-6 text-primary" />
+          <CompanyLogo name={extractCompanyFromTitle(projectName)} className="h-10 w-10" />
           <h1 className="font-serif text-2xl tracking-tight text-foreground">{projectName}</h1>
         </div>
         <p className="text-sm text-muted-foreground">
@@ -215,10 +216,10 @@ export default function ProjectDetailPage() {
         <div className="mb-6 flex items-center gap-3 rounded-xl border border-border bg-card p-4">
           <FileText className="h-5 w-5 text-primary" />
           <div className="flex-1">
-            <p className="text-sm font-medium text-foreground">Bibliotheque de documents</p>
+            <p className="text-sm font-medium text-foreground">Bibliothèque de documents</p>
             <p className="text-xs text-muted-foreground">
-              {documents.length} fichier{documents.length !== 1 ? 's' : ''} classes automatiquement.
-              Utilisez le panneau de gauche pour gerer vos documents.
+              {documents.length} fichier{documents.length !== 1 ? 's' : ''} classé{documents.length !== 1 ? 's' : ''} automatiquement.
+              Utilisez le panneau de gauche pour gérer vos documents.
             </p>
           </div>
           <button

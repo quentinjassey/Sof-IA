@@ -6,6 +6,7 @@ import {
   User,
   Clock,
   Filter,
+  ArrowUpDown,
   Loader2,
   ClipboardList,
 } from 'lucide-react'
@@ -13,36 +14,24 @@ import { cn } from '@/lib/utils'
 import type { Trace, ActorType, TraceAction } from '@/types/database'
 
 const actionLabels: Record<TraceAction, string> = {
-  mission_created: 'Mission creee',
-  mission_updated: 'Mission mise a jour',
-  mission_deleted: 'Mission supprimee',
-  document_added: 'Document(s) ajoute(s)',
-  document_deleted: 'Document supprime',
-  analysis_started: 'Pre-analyse demarree',
-  analysis_completed: 'Pre-analyse terminee',
-  analysis_failed: 'Pre-analyse echouee',
-  fec_parsed: 'FEC parse',
+  mission_created: 'Mission créée',
+  mission_updated: 'Mission mise à jour',
+  mission_deleted: 'Mission supprimée',
+  document_added: 'Document(s) ajouté(s)',
+  document_deleted: 'Document supprimé',
+  analysis_started: 'Pré-analyse démarrée',
+  analysis_completed: 'Pré-analyse terminée',
+  analysis_failed: 'Pré-analyse échouée',
+  fec_parsed: 'FEC parsé',
   pdf_extracted: 'PDF extraits',
-  rapprochement_completed: 'Rapprochement termine',
-  signals_generated: 'Signaux generes',
-  deliverables_generated: 'Livrables generes',
-  signal_validated: 'Signal valide',
-  signal_rejected: 'Signal rejete',
-  signal_to_investigate: 'Signal a approfondir',
-  deliverables_regenerated: 'Livrables regeneres',
-  deliverables_exported: 'Livrables exportes',
-}
-
-function formatTimestamp(ts: string) {
-  const d = new Date(ts)
-  return d.toLocaleString('fr-FR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  })
+  rapprochement_completed: 'Rapprochement terminé',
+  signals_generated: 'Signaux générés',
+  deliverables_generated: 'Livrables générés',
+  signal_validated: 'Signal validé',
+  signal_rejected: 'Signal rejeté',
+  signal_to_investigate: 'Signal à approfondir',
+  deliverables_regenerated: 'Livrables régénérés',
+  deliverables_exported: 'Livrables exportés',
 }
 
 export default function ProjectTracesPage({
@@ -53,21 +42,25 @@ export default function ProjectTracesPage({
   const { missionId } = use(params)
 
   const [traces, setTraces] = useState<Trace[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [actorFilter, setActorFilter] = useState<'' | ActorType>('')
+  const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc')
 
   const fetchTraces = useCallback(async () => {
-    setIsLoading(true)
+    setLoading(true)
+    setError(null)
+
     try {
-      const res = await fetch(`/api/missions/${missionId}/traces`)
-      if (res.ok) {
-        const json = await res.json()
-        setTraces(json.data ?? [])
-      }
-    } catch {
-      // Silent
+      const res = await fetch(`/api/missions/${missionId}/traces?limit=200`)
+      if (!res.ok) throw new Error('Erreur lors du chargement du journal.')
+
+      const json = await res.json()
+      setTraces(json.data || [])
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur interne.')
     } finally {
-      setIsLoading(false)
+      setLoading(false)
     }
   }, [missionId])
 
@@ -75,85 +68,191 @@ export default function ProjectTracesPage({
     fetchTraces()
   }, [fetchTraces])
 
-  const filteredTraces = actorFilter
-    ? traces.filter((t) => t.actor === actorFilter)
-    : traces
+  const filteredTraces = traces
+    .filter((t) => !actorFilter || t.actor === actorFilter)
+    .sort((a, b) => {
+      const dateA = new Date(a.timestamp).getTime()
+      const dateB = new Date(b.timestamp).getTime()
+      return sortOrder === 'desc' ? dateB - dateA : dateA - dateB
+    })
+
+  const sofiaCount = traces.filter((t) => t.actor === 'sofia').length
+  const userCount = traces.filter((t) => t.actor === 'user').length
+
+  function formatTimestamp(iso: string): string {
+    const date = new Date(iso)
+    return date.toLocaleDateString('fr-FR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    })
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
+  }
 
   return (
-    <div className="mx-auto max-w-4xl p-6 lg:p-8">
-      <div className="mb-6">
-        <div className="flex items-center gap-3">
-          <ClipboardList className="h-6 w-6 text-primary" />
-          <div>
-            <h2 className="font-serif text-xl text-foreground">Journal de tracabilite</h2>
-            <p className="text-xs text-muted-foreground">
-              Historique chronologique immutable de toutes les actions (NEP 230)
-            </p>
+    <div className="mx-auto max-w-4xl space-y-6 p-6 lg:p-8 animate-fade-in">
+      {/* Header */}
+      <div>
+        <h1 className="font-serif text-2xl tracking-tight text-foreground">
+          Journal de traçabilité
+        </h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Historique chronologique de toutes les actions (Sof&apos;IA et CAC).
+          {traces.length > 0 && ` ${traces.length} action${traces.length !== 1 ? 's' : ''} tracée${traces.length !== 1 ? 's' : ''}.`}
+        </p>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-3 gap-4">
+        <div className="rounded-xl border border-border bg-card px-4 py-3">
+          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Total</p>
+          <p className="mt-1 text-2xl font-bold text-card-foreground">{traces.length}</p>
+        </div>
+        <div className="rounded-xl border border-border bg-card px-4 py-3">
+          <div className="flex items-center gap-2">
+            <Bot className="h-4 w-4 text-primary" />
+            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Sof&apos;IA</p>
           </div>
+          <p className="mt-1 text-2xl font-bold text-primary">{sofiaCount}</p>
+        </div>
+        <div className="rounded-xl border border-border bg-card px-4 py-3">
+          <div className="flex items-center gap-2">
+            <User className="h-4 w-4 text-primary" />
+            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">CAC</p>
+          </div>
+          <p className="mt-1 text-2xl font-bold text-primary">{userCount}</p>
         </div>
       </div>
 
-      {/* Filter */}
-      <div className="mb-4 flex items-center gap-2">
+      {/* Filters */}
+      <div className="flex flex-wrap items-center gap-3">
         <Filter className="h-4 w-4 text-muted-foreground" />
-        <select
-          value={actorFilter}
-          onChange={(e) => setActorFilter(e.target.value as '' | ActorType)}
-          className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs text-foreground"
+        <span className="text-sm font-medium text-muted-foreground">Filtre :</span>
+        <div className="flex rounded-lg border border-border bg-card text-sm">
+          <button
+            onClick={() => setActorFilter('')}
+            className={cn(
+              'px-4 py-1.5 transition-colors',
+              actorFilter === '' ? 'bg-primary/10 font-medium text-primary' : 'text-muted-foreground hover:bg-accent'
+            )}
+          >
+            Tous
+          </button>
+          <button
+            onClick={() => setActorFilter('sofia')}
+            className={cn(
+              'border-l border-border px-4 py-1.5 transition-colors',
+              actorFilter === 'sofia' ? 'bg-primary/10 font-medium text-primary' : 'text-muted-foreground hover:bg-accent'
+            )}
+          >
+            Sof&apos;IA
+          </button>
+          <button
+            onClick={() => setActorFilter('user')}
+            className={cn(
+              'border-l border-border px-4 py-1.5 transition-colors',
+              actorFilter === 'user' ? 'bg-primary/10 font-medium text-primary' : 'text-muted-foreground hover:bg-accent'
+            )}
+          >
+            CAC
+          </button>
+        </div>
+
+        <button
+          onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}
+          className="ml-auto flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent"
         >
-          <option value="">Tous les acteurs</option>
-          <option value="sofia">Sof&apos;IA</option>
-          <option value="user">CAC</option>
-        </select>
-        <span className="text-xs text-muted-foreground">
-          {filteredTraces.length} entree{filteredTraces.length !== 1 ? 's' : ''}
-        </span>
+          <ArrowUpDown className="h-3.5 w-3.5" />
+          {sortOrder === 'desc' ? 'Plus récent d\'abord' : 'Plus ancien d\'abord'}
+        </button>
       </div>
 
-      {isLoading ? (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-6 w-6 animate-spin text-primary" />
-        </div>
-      ) : filteredTraces.length === 0 ? (
-        <div className="rounded-xl border border-border bg-card py-12 text-center">
-          <p className="text-sm text-muted-foreground">Aucune entree dans le journal.</p>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {filteredTraces.map((trace) => (
-            <div
-              key={trace.id}
-              className="flex items-start gap-3 rounded-xl border border-border bg-card p-4"
-            >
-              <div className={cn(
-                'mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full',
-                trace.actor === 'sofia' ? 'bg-primary/10' : 'bg-muted'
-              )}>
-                {trace.actor === 'sofia' ? (
-                  <Bot className="h-3.5 w-3.5 text-primary" />
-                ) : (
-                  <User className="h-3.5 w-3.5 text-muted-foreground" />
-                )}
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-foreground">
-                    {actionLabels[trace.action] || trace.action}
-                  </span>
-                </div>
-                <p className="mt-0.5 text-xs text-muted-foreground">{trace.actor_name}</p>
-                {trace.details && (
-                  <p className="mt-1 text-xs text-foreground/80">{trace.details}</p>
-                )}
-              </div>
-              <div className="shrink-0 flex items-center gap-1 text-[10px] text-muted-foreground">
-                <Clock className="h-3 w-3" />
-                {formatTimestamp(trace.timestamp)}
-              </div>
-            </div>
-          ))}
+      {error && (
+        <div className="rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-center">
+          <p className="text-sm text-destructive">{error}</p>
         </div>
       )}
+
+      {/* Timeline */}
+      {filteredTraces.length === 0 ? (
+        <div className="rounded-xl border border-border bg-card px-6 py-10 text-center">
+          <ClipboardList className="mx-auto h-10 w-10 text-muted-foreground/40" />
+          <p className="mt-3 text-sm font-medium text-muted-foreground">
+            {actorFilter ? 'Aucune action ne correspond au filtre sélectionné.' : 'Aucune action tracée pour cette analyse.'}
+          </p>
+        </div>
+      ) : (
+        <div className="relative">
+          <div className="absolute left-6 top-0 h-full w-px bg-border" />
+
+          <div className="space-y-0">
+            {filteredTraces.map((trace) => {
+              const isSofia = trace.actor === 'sofia'
+
+              return (
+                <div key={trace.id} className="relative flex gap-4 py-3 pl-0">
+                  <div className="relative z-10 flex h-12 w-12 flex-shrink-0 items-center justify-center">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+                      {isSofia ? (
+                        <Bot className="h-4 w-4 text-primary" />
+                      ) : (
+                        <User className="h-4 w-4 text-primary" />
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="min-w-0 flex-1 rounded-lg border border-border bg-card px-4 py-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-medium text-card-foreground">
+                          {actionLabels[trace.action] || trace.action}
+                        </p>
+                        <p className="mt-0.5 text-xs text-muted-foreground">
+                          {trace.actor_name}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground/70">
+                        <Clock className="h-3 w-3" />
+                        {formatTimestamp(trace.timestamp)}
+                      </div>
+                    </div>
+
+                    {trace.details && (
+                      <p className="mt-2 text-sm text-muted-foreground">{trace.details}</p>
+                    )}
+
+                    {trace.target_type && (
+                      <div className="mt-2">
+                        <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                          {trace.target_type}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Footer */}
+      <div className="rounded-lg border border-muted bg-muted/50 px-5 py-3">
+        <p className="text-xs text-muted-foreground">
+          Ce journal est généré automatiquement et ne peut être modifié.
+          Il constitue la trace des diligences réalisées dans le cadre de cette pré-analyse.
+        </p>
+      </div>
     </div>
   )
 }

@@ -23,29 +23,29 @@ const SCENARIO_CONFIG: Record<ScenarioType, {
 }> = {
   sondage_ca: {
     label: 'Sondage sur le chiffre d\'affaires',
-    description: 'Rapprochement factures / bons de livraison / ecritures FEC',
+    description: 'Rapprochement factures / bons de livraison / écritures FEC',
     icon: <BarChart3 className="h-5 w-5" />,
   },
   cutoff: {
-    label: 'Cesure d\'exercice (cut-off)',
-    description: 'Rattachement temporel des operations autour de la cloture',
+    label: 'Césure d\'exercice (cut-off)',
+    description: 'Rattachement temporel des opérations autour de la clôture',
     icon: <Scissors className="h-5 w-5" />,
   },
   pointage: {
-    label: 'Pointage etats financiers / annexe',
-    description: 'Coherence bilan, compte de resultat et annexe',
+    label: 'Pointage états financiers / annexe',
+    description: 'Cohérence bilan, compte de résultat et annexe',
     icon: <FileSearch className="h-5 w-5" />,
   },
 }
 
 const STATUS_DISPLAY: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
-  created: { label: 'Pret', icon: <Clock className="h-3.5 w-3.5" />, color: 'text-muted-foreground' },
-  documents_ready: { label: 'Documents prets', icon: <CheckCircle className="h-3.5 w-3.5" />, color: 'text-primary' },
+  created: { label: 'Prêt', icon: <Clock className="h-3.5 w-3.5" />, color: 'text-muted-foreground' },
+  documents_ready: { label: 'Documents prêts', icon: <CheckCircle className="h-3.5 w-3.5" />, color: 'text-primary' },
   analyzing: { label: 'Analyse en cours', icon: <Loader2 className="h-3.5 w-3.5 animate-spin" />, color: 'text-primary' },
-  analysis_failed: { label: 'Echec', icon: <XCircle className="h-3.5 w-3.5" />, color: 'text-destructive' },
-  analyzed: { label: 'Analysee', icon: <CheckCircle className="h-3.5 w-3.5" />, color: 'text-success' },
+  analysis_failed: { label: 'Échec', icon: <XCircle className="h-3.5 w-3.5" />, color: 'text-destructive' },
+  analyzed: { label: 'Analysée', icon: <CheckCircle className="h-3.5 w-3.5" />, color: 'text-success' },
   in_review: { label: 'En revue', icon: <AlertTriangle className="h-3.5 w-3.5" />, color: 'text-warning-foreground' },
-  completed: { label: 'Terminee', icon: <CheckCircle className="h-3.5 w-3.5" />, color: 'text-success' },
+  completed: { label: 'Terminée', icon: <CheckCircle className="h-3.5 w-3.5" />, color: 'text-success' },
 }
 
 interface AnalysisCardProps {

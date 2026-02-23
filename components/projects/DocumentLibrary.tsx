@@ -31,7 +31,7 @@ const DOC_TYPE_LABELS: Record<DocumentType, string> = {
   contrat: 'Contrats',
   annexe: 'Annexes',
   bilan: 'Bilans',
-  compte_resultat: 'Comptes de resultat',
+  compte_resultat: 'Comptes de résultat',
   autre: 'Autres',
 }
 

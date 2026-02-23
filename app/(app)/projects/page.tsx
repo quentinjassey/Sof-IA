@@ -16,6 +16,7 @@ import {
   BarChart3,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { CompanyLogo, extractCompanyFromTitle } from '@/components/missions/CompanyLogo'
 import type { Project } from '@/types/database'
 
 function formatDate(dateStr: string): string {
@@ -80,7 +81,7 @@ export default function ProjectsPage() {
       const json = await res.json()
 
       if (!res.ok || json.error) {
-        setError(json.error || 'Erreur lors de la creation du projet.')
+        setError(json.error || 'Erreur lors de la création du projet.')
         return
       }
 
@@ -103,7 +104,7 @@ export default function ProjectsPage() {
     async (e: React.MouseEvent, projectId: string) => {
       e.stopPropagation()
 
-      if (!confirm('Supprimer ce projet et toutes ses donnees (documents, analyses, signaux) ?')) {
+      if (!confirm('Supprimer ce projet et toutes ses données (documents, analyses, signaux) ?')) {
         return
       }
 
@@ -134,7 +135,7 @@ export default function ProjectsPage() {
             Projets clients
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Gerez vos projets de pre-analyse documentaire
+            Gérez vos projets de pré-analyse documentaire
           </p>
         </div>
         {!showCreateForm && (
@@ -239,11 +240,11 @@ export default function ProjectsPage() {
               {isCreating ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Creation...
+                  Création...
                 </>
               ) : (
                 <>
-                  Creer le projet
+                  Créer le projet
                   <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                 </>
               )}
@@ -268,7 +269,7 @@ export default function ProjectsPage() {
             Aucun projet
           </h3>
           <p className="mt-1 text-sm text-muted-foreground">
-            Creez votre premier projet client pour commencer
+            Créez votre premier projet client pour commencer
           </p>
           <button
             onClick={() => setShowCreateForm(true)}
@@ -315,9 +316,7 @@ export default function ProjectsPage() {
                     )}
                     style={{ animationDelay: `${index * 60}ms` }}
                   >
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                      <FolderOpen className="h-5 w-5" />
-                    </div>
+                    <CompanyLogo name={extractCompanyFromTitle(project.name)} />
                     <div className="min-w-0 flex-1">
                       <h3 className="truncate text-sm font-semibold text-card-foreground group-hover:text-primary transition-colors">
                         {project.name}

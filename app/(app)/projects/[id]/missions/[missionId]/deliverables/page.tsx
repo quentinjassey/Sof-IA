@@ -10,6 +10,7 @@ import {
   RotateCcw,
   Loader2,
   AlertCircle,
+  Info,
   Eye,
 } from 'lucide-react'
 import DisclaimerBanner from '@/components/ui/DisclaimerBanner'
@@ -33,26 +34,26 @@ interface DeliverableMeta {
 
 const deliverableMeta: Record<DeliverableType, DeliverableMeta> = {
   checklist_completude: {
-    title: 'Check-list de completude documentaire',
-    description: 'Liste des documents attendus, recus et leur statut.',
+    title: 'Check-list de complétude documentaire',
+    description: 'Liste des documents attendus, reçus et leur statut. Permet de vérifier la complétude du dossier documentaire.',
     icon: <FileCheck className="h-6 w-6 text-primary" />,
     formatLabel: 'PDF',
   },
   tableau_signaux: {
     title: 'Tableau des signaux documentaires',
-    description: 'Tableau detaille de tous les signaux detectes avec les decisions du CAC.',
+    description: 'Tableau détaillé de tous les signaux détectés avec les décisions du commissaire aux comptes.',
     icon: <FileSpreadsheet className="h-6 w-6 text-primary" />,
     formatLabel: 'XLSX',
   },
   synthese_preanalyse: {
-    title: 'Synthese de pre-analyse (NEP 230)',
-    description: 'Document de synthese integrable au dossier de travail.',
+    title: 'Synthèse de pré-analyse (NEP 230)',
+    description: 'Document de synthèse intégrable au dossier de travail. Périmètre, constats, décisions et limites.',
     icon: <FileText className="h-6 w-6 text-primary" />,
     formatLabel: 'PDF',
   },
   journal_tracabilite: {
-    title: 'Journal de tracabilite',
-    description: 'Historique chronologique de toutes les actions (Sof\'IA et CAC).',
+    title: 'Journal de traçabilité',
+    description: 'Historique chronologique complet de toutes les actions réalisées (Sof\'IA et CAC).',
     icon: <ClipboardList className="h-6 w-6 text-primary" />,
     formatLabel: 'PDF',
   },
@@ -73,24 +74,22 @@ export default function ProjectDeliverablesPage({
   const { missionId } = use(params)
 
   const [deliverables, setDeliverables] = useState<Deliverable[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [isRegenerating, setIsRegenerating] = useState(false)
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
-  const [previewTitle, setPreviewTitle] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [regenerating, setRegenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [previewDeliverable, setPreviewDeliverable] = useState<{ id: string; title: string } | null>(null)
 
   const fetchDeliverables = useCallback(async () => {
-    setIsLoading(true)
     try {
       const res = await fetch(`/api/missions/${missionId}/deliverables`)
-      if (res.ok) {
-        const json = await res.json()
-        setDeliverables(json.data ?? [])
-      }
-    } catch {
-      // Silent
+      if (!res.ok) throw new Error('Erreur lors du chargement des livrables.')
+      const json = await res.json()
+      setDeliverables(json.data || [])
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur interne.')
     } finally {
-      setIsLoading(false)
+      setLoading(false)
     }
   }, [missionId])
 
@@ -98,138 +97,202 @@ export default function ProjectDeliverablesPage({
     fetchDeliverables()
   }, [fetchDeliverables])
 
-  const handleRegenerate = async () => {
-    setIsRegenerating(true)
+  async function handleRegenerate() {
+    setRegenerating(true)
     setError(null)
+    setSuccessMessage(null)
+
     try {
-      const res = await fetch(`/api/missions/${missionId}/deliverables`, { method: 'POST' })
-      if (res.ok) {
-        await fetchDeliverables()
-      } else {
-        const json = await res.json()
-        setError(json.error || 'Erreur lors de la regeneration.')
+      const res = await fetch(`/api/missions/${missionId}/deliverables`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Erreur lors de la régénération.')
       }
-    } catch {
-      setError('Impossible de contacter le serveur.')
+
+      setSuccessMessage('Livrables régénérés avec succès. Vos décisions de validation sont intégrées.')
+      await fetchDeliverables()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur lors de la régénération.')
     } finally {
-      setIsRegenerating(false)
+      setRegenerating(false)
     }
   }
 
-  const handleDownload = (deliverable: Deliverable) => {
+  function handleDownload(deliverable: Deliverable) {
     window.open(`/api/missions/${missionId}/deliverables/${deliverable.id}/download`, '_blank')
   }
 
-  const handlePreview = (deliverable: Deliverable) => {
-    if (deliverable.format === 'pdf') {
-      setPreviewUrl(`/api/missions/${missionId}/deliverables/${deliverable.id}/preview`)
-      setPreviewTitle(deliverableMeta[deliverable.type]?.title ?? deliverable.title)
-    }
+  function getDeliverable(type: DeliverableType): Deliverable | undefined {
+    return deliverables.find((d) => d.type === type)
   }
 
-  const orderedDeliverables = deliverableOrder.map((type) =>
-    deliverables.find((d) => d.type === type)
-  )
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
+  }
 
   return (
-    <div className="mx-auto max-w-4xl p-6 lg:p-8">
+    <div className="mx-auto max-w-4xl space-y-6 p-6 lg:p-8 animate-fade-in">
+      {/* Header */}
+      <div>
+        <h1 className="font-serif text-2xl tracking-tight text-foreground">
+          Livrables générés
+        </h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Check-list, tableau des signaux, synthèse de pré-analyse et journal de traçabilité.
+        </p>
+      </div>
+
       <DisclaimerBanner />
 
-      <div className="mt-6">
-        <div className="mb-6 flex items-center justify-between">
+      <div className="flex items-start gap-3 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
+        <Info className="mt-0.5 h-5 w-5 flex-shrink-0 text-primary" />
+        <div>
+          <p className="text-sm text-primary">
+            Les livrables intègrent vos décisions de validation.
+            Cliquez sur &laquo; Régénérer &raquo; pour mettre à jour après de nouvelles décisions.
+          </p>
+        </div>
+      </div>
+
+      {error && (
+        <div className="flex items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3">
+          <AlertCircle className="h-5 w-5 flex-shrink-0 text-destructive" />
+          <p className="text-sm text-destructive">{error}</p>
+        </div>
+      )}
+
+      {successMessage && (
+        <div className="flex items-center gap-2 rounded-lg border border-success/20 bg-success/10 px-4 py-3">
+          <FileCheck className="h-5 w-5 flex-shrink-0 text-success" />
+          <p className="text-sm text-success">{successMessage}</p>
+        </div>
+      )}
+
+      {/* Deliverable cards */}
+      <div className="space-y-4">
+        {deliverableOrder.map((type) => {
+          const meta = deliverableMeta[type]
+          const deliverable = getDeliverable(type)
+          const isAvailable = !!deliverable
+
+          return (
+            <div
+              key={type}
+              className={cn(
+                'rounded-2xl border border-border bg-card transition-shadow',
+                isAvailable ? 'hover:shadow-sm' : 'opacity-60'
+              )}
+            >
+              <div className="flex items-start gap-4 px-5 py-4">
+                <div className="mt-0.5 flex-shrink-0">{meta.icon}</div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-3">
+                    <h3 className="text-sm font-semibold text-card-foreground">{meta.title}</h3>
+                    <Badge variant="default">{meta.formatLabel}</Badge>
+                  </div>
+                  <p className="mt-1 text-sm text-muted-foreground">{meta.description}</p>
+                  {deliverable && (
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      Généré le {new Date(deliverable.generated_at).toLocaleDateString('fr-FR', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </p>
+                  )}
+                </div>
+                <div className="flex flex-shrink-0 items-center gap-1.5">
+                  {isAvailable ? (
+                    <>
+                      {meta.formatLabel === 'PDF' && (
+                        <button
+                          onClick={() => setPreviewDeliverable({ id: deliverable!.id, title: meta.title })}
+                          className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
+                          title="Aperçu"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </button>
+                      )}
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => handleDownload(deliverable!)}
+                        iconLeft={<Download className="h-4 w-4" />}
+                      >
+                        Télécharger {meta.formatLabel}
+                      </Button>
+                    </>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">Non disponible</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      {deliverables.length === 0 && (
+        <div className="rounded-2xl border border-border bg-card px-6 py-10 text-center">
+          <FileText className="mx-auto h-10 w-10 text-muted-foreground" />
+          <p className="mt-3 text-sm font-medium text-muted-foreground">
+            Aucun livrable généré pour cette analyse.
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Les livrables seront générés automatiquement à l&apos;issue de la pré-analyse.
+          </p>
+        </div>
+      )}
+
+      {/* Regenerate section */}
+      <div className="rounded-2xl border border-border bg-card px-5 py-4">
+        <div className="flex items-center justify-between">
           <div>
-            <h2 className="font-serif text-xl text-foreground">Livrables</h2>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Documents generes par la pre-analyse, integrables au dossier de travail
+            <p className="text-sm font-medium text-card-foreground">
+              {deliverables.length === 0 ? 'Générer les livrables' : 'Régénérer les livrables'}
+            </p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              {deliverables.length === 0
+                ? 'Génère les 4 livrables à partir des résultats de la pré-analyse.'
+                : 'Régénère tous les livrables en intégrant vos dernières décisions de validation.'}
             </p>
           </div>
           <Button
+            variant="secondary"
             onClick={handleRegenerate}
-            disabled={isRegenerating}
-            variant="outline"
-            size="sm"
+            loading={regenerating}
+            disabled={regenerating}
+            iconLeft={<RotateCcw className="h-4 w-4" />}
           >
-            {isRegenerating ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <RotateCcw className="mr-2 h-4 w-4" />
-            )}
-            Regenerer
+            {deliverables.length === 0 ? 'Générer les livrables' : 'Régénérer tous les livrables'}
           </Button>
         </div>
-
-        {error && (
-          <div className="mb-4 flex items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-            <AlertCircle className="h-4 w-4" />
-            {error}
-          </div>
-        )}
-
-        {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-6 w-6 animate-spin text-primary" />
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {orderedDeliverables.map((deliverable, i) => {
-              const type = deliverableOrder[i]
-              const meta = deliverableMeta[type]
-
-              return (
-                <div
-                  key={type}
-                  className={cn(
-                    'flex items-start gap-4 rounded-xl border bg-card p-5 transition-all',
-                    deliverable ? 'border-border' : 'border-dashed border-border/50 opacity-60'
-                  )}
-                >
-                  <div className="shrink-0">{meta.icon}</div>
-                  <div className="min-w-0 flex-1">
-                    <h3 className="text-sm font-semibold text-card-foreground">{meta.title}</h3>
-                    <p className="mt-1 text-xs text-muted-foreground">{meta.description}</p>
-                    {deliverable && (
-                      <div className="mt-2 flex items-center gap-2">
-                        <Badge variant="outline">{meta.formatLabel}</Badge>
-                        <span className="text-[10px] text-muted-foreground">
-                          Genere le {new Date(deliverable.generated_at).toLocaleDateString('fr-FR')}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                  {deliverable && (
-                    <div className="flex shrink-0 items-center gap-2">
-                      {deliverable.format === 'pdf' && (
-                        <Button
-                          onClick={() => handlePreview(deliverable)}
-                          variant="ghost"
-                          size="sm"
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      )}
-                      <Button
-                        onClick={() => handleDownload(deliverable)}
-                        variant="outline"
-                        size="sm"
-                      >
-                        <Download className="mr-2 h-4 w-4" />
-                        Telecharger
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-        )}
       </div>
 
-      {previewUrl && (
+      <div className="rounded-lg border border-muted bg-muted/50 px-5 py-3">
+        <p className="text-xs text-muted-foreground">
+          Ces documents sont des outils de pré-analyse. Ils ne constituent pas une conclusion d&apos;audit.
+        </p>
+      </div>
+
+      {previewDeliverable && (
         <PdfPreviewModal
-          isOpen={!!previewUrl}
-          onClose={() => setPreviewUrl(null)}
-          title={previewTitle}
-          pdfUrl={previewUrl}
+          isOpen={!!previewDeliverable}
+          onClose={() => setPreviewDeliverable(null)}
+          title={previewDeliverable.title}
+          pdfUrl={`/api/missions/${missionId}/deliverables/${previewDeliverable.id}/preview`}
+          downloadUrl={`/api/missions/${missionId}/deliverables/${previewDeliverable.id}/download`}
         />
       )}
     </div>

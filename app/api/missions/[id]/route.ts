@@ -42,11 +42,18 @@ export async function GET(
   // Fetch stats for the mission
   const supabase = createServerSupabaseClient()
 
-  // Count documents
-  const { count: documentsCount } = await supabase
+  // Count documents: project-based missions use project_id, legacy uses mission_id
+  let documentsCountQuery = supabase
     .from('documents')
     .select('*', { count: 'exact', head: true })
-    .eq('mission_id', id)
+
+  if (mission.project_id) {
+    documentsCountQuery = documentsCountQuery.eq('project_id', mission.project_id)
+  } else {
+    documentsCountQuery = documentsCountQuery.eq('mission_id', id)
+  }
+
+  const { count: documentsCount } = await documentsCountQuery
 
   // Count signals and group by priority and decision
   const { data: signals } = await supabase

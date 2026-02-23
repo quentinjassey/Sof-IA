@@ -52,3 +52,7 @@ env.local
 
 # video (Remotion)
 /video/
+
+# pitch presentation
+/pitch/
+/pitch-assets/

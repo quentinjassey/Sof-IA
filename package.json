@@ -48,6 +48,8 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.3",
     "@types/pdf-parse": "^1.1.5",
-    "@types/pdfmake": "^0.3.1"
+    "@types/pdfmake": "^0.3.1",
+    "playwright": "^1.58.2",
+    "puppeteer": "^24.37.5"
   }
 }

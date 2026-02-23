@@ -49,3 +49,6 @@ Thumbs.db
 .claude-mcp.json
 env.local
 .mcp.json
+
+# video (Remotion)
+/video/

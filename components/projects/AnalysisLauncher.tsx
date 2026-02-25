@@ -19,9 +19,9 @@ const SCENARIO_REQUIRED_TYPES: Record<ScenarioType, DocumentType[]> = {
 }
 
 const SCENARIO_OPTIONAL_TYPES: Record<ScenarioType, DocumentType[]> = {
-  sondage_ca: ['contrat', 'annexe'],
+  sondage_ca: ['contrat'],
   cutoff: ['contrat'],
-  pointage: ['fec'],
+  pointage: [],
 }
 
 const DOC_TYPE_LABELS: Record<DocumentType, string> = {

@@ -1,7 +1,8 @@
 // app/api/missions/[id]/documents/route.ts
 // GET:    List all documents for a mission
 // POST:   Upload documents (FormData with files + types)
-// DELETE: Remove a document (by documentId in query params)
+// PATCH:  Update document type(s) (single or bulk)
+// DELETE: Remove document(s) (single or bulk)
 
 import { NextRequest } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
@@ -262,7 +263,110 @@ export async function POST(
 }
 
 // ---------------------------------------------------------------
-// DELETE /api/missions/[id]/documents?documentId=uuid
+// PATCH /api/missions/[id]/documents — Update document type(s)
+// Body: { documentIds: string[], type: string }
+//    or { documentId: string, type: string }
+// ---------------------------------------------------------------
+
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id: missionId } = await params
+
+  let session
+  try {
+    session = await requireSession(req)
+  } catch (response) {
+    return response as Response
+  }
+
+  try {
+    await requireMissionOwnership(missionId, session.license_id)
+  } catch (response) {
+    return response as Response
+  }
+
+  // Parse body
+  let body: { documentIds?: string[]; documentId?: string; type?: string }
+  try {
+    body = await req.json()
+  } catch {
+    return errorResponse('Corps de requete JSON invalide.', 'VALIDATION_ERROR', 400)
+  }
+
+  // Normalize to array of IDs
+  const docIds: string[] = body.documentIds ?? (body.documentId ? [body.documentId] : [])
+  const newType = body.type
+
+  if (docIds.length === 0) {
+    return errorResponse(
+      'Le parametre "documentIds" ou "documentId" est requis.',
+      'VALIDATION_ERROR',
+      400
+    )
+  }
+
+  if (!newType || !VALID_DOC_TYPES.includes(newType as DocumentType)) {
+    return errorResponse(
+      `Type de document invalide. Types acceptes : ${VALID_DOC_TYPES.join(', ')}`,
+      'VALIDATION_ERROR',
+      400
+    )
+  }
+
+  const supabase = createServerSupabaseClient()
+  const actorName = await getActorName(session.license_id)
+  let updated = 0
+
+  for (const docId of docIds) {
+    // Fetch document to verify ownership and get old type
+    const { data: doc, error: fetchError } = await supabase
+      .from('documents')
+      .select('id, type, filename')
+      .eq('id', docId)
+      .eq('mission_id', missionId)
+      .single()
+
+    if (fetchError || !doc) {
+      continue // Skip documents not belonging to this mission
+    }
+
+    const oldType = doc.type
+
+    // Update type
+    const { error: updateError } = await supabase
+      .from('documents')
+      .update({ type: newType })
+      .eq('id', docId)
+
+    if (updateError) {
+      console.error(`Erreur mise a jour type document ${docId}:`, updateError.message)
+      continue
+    }
+
+    updated++
+
+    // Create trace entry
+    await createTrace({
+      mission_id: missionId,
+      license_id: session.license_id,
+      actor: 'user',
+      actor_name: actorName,
+      action: 'document_type_changed',
+      target_type: 'document',
+      target_id: docId,
+      details: `Type du document "${doc.filename}" modifie : ${oldType} → ${newType}`,
+    })
+  }
+
+  return successResponse({ updated })
+}
+
+// ---------------------------------------------------------------
+// DELETE /api/missions/[id]/documents
+// Single:  ?documentId=uuid
+// Bulk:    ?documentIds=uuid1,uuid2,uuid3
 // ---------------------------------------------------------------
 
 export async function DELETE(
@@ -285,72 +389,93 @@ export async function DELETE(
     return response as Response
   }
 
-  // Get documentId from query params
+  // Get document IDs from query params
   const url = new URL(req.url)
-  const documentId = url.searchParams.get('documentId')
+  const singleId = url.searchParams.get('documentId')
+  const bulkIds = url.searchParams.get('documentIds')
 
-  if (!documentId) {
+  // Build array of IDs to delete
+  let docIds: string[] = []
+  if (bulkIds) {
+    docIds = bulkIds.split(',').map((id) => id.trim()).filter(Boolean)
+  } else if (singleId) {
+    docIds = [singleId]
+  }
+
+  if (docIds.length === 0) {
     return errorResponse(
-      'Le parametre "documentId" est requis.',
+      'Le parametre "documentId" ou "documentIds" est requis.',
       'VALIDATION_ERROR',
       400
     )
   }
 
   const supabase = createServerSupabaseClient()
-
-  // Verify document belongs to this mission
-  const { data: document, error: fetchError } = await supabase
-    .from('documents')
-    .select('*')
-    .eq('id', documentId)
-    .eq('mission_id', missionId)
-    .single()
-
-  if (fetchError || !document) {
-    return errorResponse(
-      'Document non trouve dans cette mission.',
-      'NOT_FOUND',
-      404
-    )
-  }
-
-  // Delete from Supabase Storage
-  const { error: storageError } = await supabase.storage
-    .from('documents')
-    .remove([document.storage_path])
-
-  if (storageError) {
-    console.error(`Erreur suppression Storage ${document.storage_path}:`, storageError.message)
-    // Continue anyway — the DB record is the source of truth
-  }
-
-  // Delete from DB
-  const { error: deleteError } = await supabase
-    .from('documents')
-    .delete()
-    .eq('id', documentId)
-
-  if (deleteError) {
-    return errorResponse(
-      'Erreur lors de la suppression du document.',
-      'INTERNAL_ERROR',
-      500
-    )
-  }
-
-  // Create trace: document_deleted
   const actorName = await getActorName(session.license_id)
-  await createTrace({
-    mission_id: missionId,
-    license_id: session.license_id,
-    actor: 'user',
-    actor_name: actorName,
-    action: 'document_deleted',
-    target_type: 'document',
-    target_id: documentId,
-    details: `Document supprime : "${document.filename}"`,
-  })
+  let deleted = 0
+  let errors = 0
 
-  return successResponse({ success: true as const })
+  for (const docId of docIds) {
+    // Verify document belongs to this mission
+    const { data: document, error: fetchError } = await supabase
+      .from('documents')
+      .select('*')
+      .eq('id', docId)
+      .eq('mission_id', missionId)
+      .single()
+
+    if (fetchError || !document) {
+      errors++
+      continue
+    }
+
+    // Delete from Supabase Storage
+    const { error: storageError } = await supabase.storage
+      .from('documents')
+      .remove([document.storage_path])
+
+    if (storageError) {
+      console.error(`Erreur suppression Storage ${document.storage_path}:`, storageError.message)
+      // Continue anyway — the DB record is the source of truth
+    }
+
+    // Delete from DB
+    const { error: deleteError } = await supabase
+      .from('documents')
+      .delete()
+      .eq('id', docId)
+
+    if (deleteError) {
+      errors++
+      continue
+    }
+
+    deleted++
+
+    // Create trace: document_deleted
+    await createTrace({
+      mission_id: missionId,
+      license_id: session.license_id,
+      actor: 'user',
+      actor_name: actorName,
+      action: 'document_deleted',
+      target_type: 'document',
+      target_id: docId,
+      details: `Document supprime : "${document.filename}"`,
+    })
+  }
+
+  // For single deletes, keep backward-compatible response shape
+  if (!bulkIds) {
+    if (deleted === 0) {
+      return errorResponse(
+        'Document non trouve dans cette mission.',
+        'NOT_FOUND',
+        404
+      )
+    }
+    return successResponse({ success: true as const })
+  }
+
+  return successResponse({ deleted, errors })
 }

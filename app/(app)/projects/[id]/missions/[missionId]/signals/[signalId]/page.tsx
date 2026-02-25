@@ -128,7 +128,7 @@ export default function ProjectSignalDetailPage({
 
   if (error || !signal) {
     return (
-      <div className="mx-auto max-w-3xl space-y-6 p-6">
+      <div className="mx-auto max-w-3xl space-y-6">
         <div className="rounded-2xl border border-destructive/20 bg-destructive/5 px-6 py-8 text-center">
           <AlertCircle className="mx-auto h-10 w-10 text-destructive" />
           <p className="mt-3 text-sm text-destructive">{error || 'Signal non trouvé.'}</p>
@@ -147,7 +147,7 @@ export default function ProjectSignalDetailPage({
   const ecriture = signal.related_ecriture
 
   return (
-    <div className={cn('mx-auto max-w-5xl space-y-6 p-6 lg:p-8 animate-fade-in')}>
+    <div className={cn('mx-auto max-w-5xl space-y-6 animate-fade-in')}>
       <Link
         href={`${basePath}/signals`}
         className="inline-flex items-center gap-2 text-sm font-medium text-primary transition-colors hover:text-primary/80"

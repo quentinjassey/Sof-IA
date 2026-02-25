@@ -20,11 +20,11 @@ const SCENARIOS: ScenarioType[] = ['sondage_ca', 'cutoff', 'pointage']
 
 export default function ProjectDetailPage() {
   const router = useRouter()
-  const { projectId, documents, missions, refreshProject, isLoading, projectName } =
+  const { projectId, documents, missions, refreshProject, isLoading, projectName, openUploadModal } =
     useProjectContext()
 
   const [launcherScenario, setLauncherScenario] = useState<ScenarioType | null>(null)
-  const [launchingScenario, setLaunchingScenario] = useState<ScenarioType | null>(null)
+  const [launchingScenarios, setLaunchingScenarios] = useState<Set<ScenarioType>>(new Set())
   const [signalCounts, setSignalCounts] = useState<Record<string, number>>({})
 
   const missionsByScenario = useMemo(() => {
@@ -79,17 +79,19 @@ export default function ProjectDetailPage() {
     async (documentIds: string[]) => {
       if (!launcherScenario) return
 
-      setLaunchingScenario(launcherScenario)
+      const scenario = launcherScenario
+      setLaunchingScenarios((prev) => new Set(prev).add(scenario))
+      setLauncherScenario(null)
 
       try {
         // Create mission if it doesn't exist
-        let mission = missionsByScenario[launcherScenario]
+        let mission = missionsByScenario[scenario]
 
         if (!mission) {
           const createRes = await fetch(`/api/projects/${projectId}/missions`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ scenario: launcherScenario }),
+            body: JSON.stringify({ scenario }),
           })
           const createJson = await createRes.json()
           if (!createRes.ok) throw new Error(createJson.error || 'Erreur creation mission')
@@ -105,23 +107,18 @@ export default function ProjectDetailPage() {
         const analysisJson = await analysisRes.json()
         if (!analysisRes.ok) throw new Error(analysisJson.error || 'Erreur lancement analyse')
 
-        setLauncherScenario(null)
         await refreshProject()
-
-        // If analysis completed synchronously (pointage/cutoff local), stay on project page
-        if (analysisJson.data?.status === 'analyzed') {
-          await refreshProject()
-        } else {
-          // Redirect to analysis progress page
-          router.push(`/projects/${projectId}/missions/${mission!.id}/analysis`)
-        }
       } catch (err) {
         throw err
       } finally {
-        setLaunchingScenario(null)
+        setLaunchingScenarios((prev) => {
+          const next = new Set(prev)
+          next.delete(scenario)
+          return next
+        })
       }
     },
-    [launcherScenario, missionsByScenario, projectId, refreshProject, router]
+    [launcherScenario, missionsByScenario, projectId, refreshProject]
   )
 
   const handleRelaunch = useCallback(
@@ -138,32 +135,6 @@ export default function ProjectDetailPage() {
     [router, projectId]
   )
 
-  const handleUpload = useCallback(() => {
-    const input = document.createElement('input')
-    input.type = 'file'
-    input.multiple = true
-    input.accept = '.txt,.csv,.pdf,.jpg,.jpeg,.png,.tiff,.tif'
-    input.onchange = async (e) => {
-      const files = (e.target as HTMLInputElement).files
-      if (!files || files.length === 0) return
-
-      const formData = new FormData()
-      for (const file of Array.from(files)) {
-        formData.append('files', file)
-      }
-
-      try {
-        await fetch(`/api/projects/${projectId}/documents`, {
-          method: 'POST',
-          body: formData,
-        })
-        await refreshProject()
-      } catch {
-        // Silent fail
-      }
-    }
-    input.click()
-  }, [projectId, refreshProject])
 
   if (isLoading) {
     return (
@@ -175,7 +146,7 @@ export default function ProjectDetailPage() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl p-6 lg:p-8">
+    <div className="mx-auto max-w-4xl">
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-1">
@@ -192,7 +163,7 @@ export default function ProjectDetailPage() {
       {documents.length === 0 && (
         <div className="mb-8">
           <button
-            onClick={handleUpload}
+            onClick={openUploadModal}
             className={cn(
               'flex w-full flex-col items-center rounded-2xl border-2 border-dashed border-border py-12 transition-all',
               'hover:border-primary/40 hover:bg-primary/[0.02]'
@@ -223,7 +194,7 @@ export default function ProjectDetailPage() {
             </p>
           </div>
           <button
-            onClick={handleUpload}
+            onClick={openUploadModal}
             className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
           >
             <Upload className="mr-1.5 inline-block h-3.5 w-3.5" />
@@ -252,7 +223,7 @@ export default function ProjectDetailPage() {
                 onLaunch={handleLaunchAnalysis}
                 onRelaunch={handleRelaunch}
                 onViewResults={handleViewResults}
-                isLaunching={launchingScenario === scenario}
+                isLaunching={launchingScenarios.has(scenario)}
               />
             )
           })}

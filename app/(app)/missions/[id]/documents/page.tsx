@@ -2,10 +2,8 @@
 
 import { useState, useEffect, useCallback, useRef, use } from 'react'
 import { useRouter } from 'next/navigation'
+import dynamic from 'next/dynamic'
 import {
-  Upload,
-  FileText,
-  Trash2,
   CheckCircle,
   XCircle,
   AlertCircle,
@@ -14,13 +12,20 @@ import {
   FolderOpen,
   RefreshCw,
   Database,
-  Eye,
 } from 'lucide-react'
 import DisclaimerBanner from '@/components/ui/DisclaimerBanner'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
-import { PdfPreviewModal } from '@/components/ui/PdfPreviewModal'
 import { MissionPageHeader } from '@/components/missions/MissionPageHeader'
+
+const PdfPreviewModal = dynamic(
+  () => import('@/components/ui/PdfPreviewModal').then((m) => m.PdfPreviewModal),
+  { ssr: false }
+)
+import DropZone, { type StagedFile } from '@/components/documents/DropZone'
+import { UploadProgress, type FileProgress } from '@/components/documents/UploadProgress'
+import { DocumentList } from '@/components/documents/DocumentList'
+import { uploadWithProgress } from '@/lib/utils/upload'
 import { cn } from '@/lib/utils'
 
 // --- Types ---
@@ -55,13 +60,6 @@ interface MissionData {
 
 // --- Helper ---
 
-function formatFileSize(bytes: number | null): string {
-  if (!bytes) return '--'
-  if (bytes < 1024) return `${bytes} o`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} Ko`
-  return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`
-}
-
 function statusBadge(status: string) {
   switch (status) {
     case 'present':
@@ -94,18 +92,6 @@ function statusBadge(status: string) {
   }
 }
 
-const documentTypeLabels: Record<string, string> = {
-  fec: 'FEC',
-  facture_vente: 'Facture de vente',
-  facture_achat: 'Facture fournisseur',
-  bon_livraison: 'Bon de livraison',
-  contrat: 'Contrat',
-  annexe: 'Annexe',
-  bilan: 'Bilan',
-  compte_resultat: 'Compte de résultat',
-  autre: 'Autre',
-}
-
 // --- Component ---
 
 export default function DocumentsPage({
@@ -121,14 +107,14 @@ export default function DocumentsPage({
   const [completeness, setCompleteness] = useState<CompletenessEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
-  const [uploadProgress, setUploadProgress] = useState(0)
+  const [fileProgress, setFileProgress] = useState<FileProgress[]>([])
+  const [overallProgress, setOverallProgress] = useState(0)
   const [launchingAnalysis, setLaunchingAnalysis] = useState(false)
   const [loadingDemo, setLoadingDemo] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [dragOver, setDragOver] = useState(false)
   const [previewDoc, setPreviewDoc] = useState<UploadedDocument | null>(null)
 
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const abortControllerRef = useRef<AbortController | null>(null)
 
   // --- Data Fetching ---
 
@@ -163,91 +149,97 @@ export default function DocumentsPage({
     fetchData()
   }, [fetchData])
 
-  // --- Upload ---
+  // --- Upload with real progress ---
 
-  async function handleUpload(files: FileList | File[]) {
-    if (!files || files.length === 0) return
+  async function handleUpload(stagedFiles: StagedFile[]) {
+    if (stagedFiles.length === 0) return
 
     setUploading(true)
-    setUploadProgress(0)
     setError(null)
 
-    const formData = new FormData()
-    const fileArray = Array.from(files)
+    // Initialize file progress
+    const initialProgress: FileProgress[] = stagedFiles.map((sf) => ({
+      id: sf.id,
+      filename: sf.file.name,
+      size: sf.file.size,
+      progress: 0,
+      status: 'pending' as const,
+    }))
+    setFileProgress(initialProgress)
+    setOverallProgress(0)
 
-    fileArray.forEach((file) => {
-      formData.append('files', file)
-      // Auto-detect type based on extension
-      const ext = file.name.split('.').pop()?.toLowerCase()
-      let docType = 'autre'
-      if (ext === 'txt' || ext === 'csv') docType = 'fec'
-      else if (ext === 'pdf') {
-        const nameLower = file.name.toLowerCase()
-        if (nameLower.includes('fa-') || nameLower.includes('facture')) docType = 'facture_vente'
-        else if (nameLower.includes('bl-') || nameLower.includes('livraison')) docType = 'bon_livraison'
-        else if (nameLower.includes('bilan')) docType = 'bilan'
-        else if (nameLower.includes('resultat') || nameLower.includes('cr-')) docType = 'compte_resultat'
-        else if (nameLower.includes('annexe')) docType = 'annexe'
-        else if (nameLower.includes('contrat')) docType = 'contrat'
-      } else if (ext === 'jpg' || ext === 'jpeg' || ext === 'png' || ext === 'tiff' || ext === 'tif') {
-        const nameLower = file.name.toLowerCase()
-        if (nameLower.includes('bilan')) docType = 'bilan'
-        else if (nameLower.includes('resultat') || nameLower.includes('cr')) docType = 'compte_resultat'
-        else if (nameLower.includes('annexe')) docType = 'annexe'
-      }
-      formData.append('types', docType)
+    const formData = new FormData()
+    stagedFiles.forEach((sf) => {
+      formData.append('files', sf.file)
+      formData.append('types', sf.detectedType)
     })
 
-    // Simulate progress
-    const progressInterval = setInterval(() => {
-      setUploadProgress((prev) => Math.min(prev + 10, 90))
-    }, 300)
+    // Mark all as uploading
+    setFileProgress((prev) =>
+      prev.map((f) => ({ ...f, status: 'uploading' as const }))
+    )
+
+    const controller = new AbortController()
+    abortControllerRef.current = controller
 
     try {
-      const res = await fetch(`/api/missions/${missionId}/documents`, {
-        method: 'POST',
-        body: formData,
-      })
-
-      clearInterval(progressInterval)
-      setUploadProgress(100)
+      const res = await uploadWithProgress(
+        `/api/missions/${missionId}/documents`,
+        formData,
+        (event) => {
+          setOverallProgress(event.percent)
+          setFileProgress((prev) =>
+            prev.map((f) => ({
+              ...f,
+              progress: event.percent,
+              status: event.percent >= 100 ? 'complete' as const : 'uploading' as const,
+            }))
+          )
+        },
+        controller.signal
+      )
 
       if (!res.ok) {
-        const data = await res.json()
-        throw new Error(data.error || "Erreur lors de l'envoi des documents.")
+        const data = await res.json() as { error?: string }
+        throw new Error((data.error as string) || "Erreur lors de l'envoi des documents.")
       }
+
+      // Mark all as complete
+      setFileProgress((prev) =>
+        prev.map((f) => ({ ...f, progress: 100, status: 'complete' as const }))
+      )
+      setOverallProgress(100)
 
       // Refresh data
       await fetchData()
+
+      // Clear progress after a short delay
+      setTimeout(() => {
+        setFileProgress([])
+        setOverallProgress(0)
+      }, 2000)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erreur lors de l'envoi.")
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        setFileProgress([])
+        setOverallProgress(0)
+      } else {
+        setError(err instanceof Error ? err.message : "Erreur lors de l'envoi.")
+        setFileProgress((prev) =>
+          prev.map((f) =>
+            f.status !== 'complete'
+              ? { ...f, status: 'error' as const, error: "Échec de l'envoi" }
+              : f
+          )
+        )
+      }
     } finally {
       setUploading(false)
-      setTimeout(() => setUploadProgress(0), 1000)
+      abortControllerRef.current = null
     }
   }
 
-  // --- Drag & Drop ---
-
-  function handleDragOver(e: React.DragEvent) {
-    e.preventDefault()
-    e.stopPropagation()
-    setDragOver(true)
-  }
-
-  function handleDragLeave(e: React.DragEvent) {
-    e.preventDefault()
-    e.stopPropagation()
-    setDragOver(false)
-  }
-
-  function handleDrop(e: React.DragEvent) {
-    e.preventDefault()
-    e.stopPropagation()
-    setDragOver(false)
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      handleUpload(e.dataTransfer.files)
-    }
+  function handleCancelUpload() {
+    abortControllerRef.current?.abort()
   }
 
   // --- Delete ---
@@ -262,6 +254,20 @@ export default function DocumentsPage({
       }
     } catch {
       setError('Erreur lors de la suppression du document.')
+    }
+  }
+
+  async function handleBulkDelete(docIds: string[]) {
+    try {
+      const res = await fetch(
+        `/api/missions/${missionId}/documents?documentIds=${docIds.join(',')}`,
+        { method: 'DELETE' }
+      )
+      if (res.ok) {
+        await fetchData()
+      }
+    } catch {
+      setError('Erreur lors de la suppression des documents.')
     }
   }
 
@@ -288,7 +294,7 @@ export default function DocumentsPage({
     }
   }
 
-  // --- Load Demo Documents (pointage only) ---
+  // --- Load Demo Documents ---
 
   async function handleLoadDemo() {
     setLoadingDemo(true)
@@ -304,7 +310,6 @@ export default function DocumentsPage({
         throw new Error(data.error || 'Erreur lors du chargement des documents de démonstration.')
       }
 
-      // Refresh data
       await fetchData()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur lors du chargement.')
@@ -341,7 +346,7 @@ export default function DocumentsPage({
 
       <DisclaimerBanner />
 
-      {/* Mission-level analysis failure banner (shown when user returns from analysis page) */}
+      {/* Mission-level analysis failure banner */}
       {mission?.status === 'analysis_failed' && (
         <div className="rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-4">
           <div className="flex items-start gap-3">
@@ -405,35 +410,11 @@ export default function DocumentsPage({
         </div>
       )}
 
-      {/* Drag & Drop Upload Zone */}
-      <div
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-        onClick={() => fileInputRef.current?.click()}
-        className={cn(
-          'cursor-pointer rounded-2xl border-2 border-dashed p-8 text-center transition-colors',
-          dragOver
-            ? 'border-primary/30 bg-primary/5'
-            : 'border-border bg-muted/30 hover:border-primary/20 hover:bg-primary/5'
-        )}
-      >
-        <input
-          ref={fileInputRef}
-          type="file"
-          multiple
-          accept=".txt,.csv,.pdf,.jpg,.jpeg,.png,.tiff,.tif"
-          onChange={(e) => e.target.files && handleUpload(e.target.files)}
-          className="hidden"
-        />
-        <Upload className={cn('mx-auto h-10 w-10', dragOver ? 'text-primary' : 'text-muted-foreground')} />
-        <p className="mt-3 text-sm font-medium text-card-foreground">
-          Glissez vos documents ici
-        </p>
-        <p className="mt-1 text-xs text-muted-foreground">
-          ou cliquez pour sélectionner — Formats acceptés : .txt (FEC), .pdf, .jpg, .png, .tiff
-        </p>
-      </div>
+      {/* Drag & Drop Upload Zone with staging */}
+      <DropZone
+        onUpload={handleUpload}
+        uploading={uploading}
+      />
 
       {/* Demo Documents Button (pointage + cutoff) */}
       {(mission?.scenario === 'pointage' || mission?.scenario === 'cutoff') && mission?.company_id && documents.length === 0 && (
@@ -462,19 +443,12 @@ export default function DocumentsPage({
       )}
 
       {/* Upload Progress */}
-      {uploading && (
-        <div className="rounded-2xl border border-primary/20 bg-primary/5 px-4 py-3">
-          <div className="flex items-center justify-between text-sm">
-            <span className="font-medium text-primary">Envoi en cours...</span>
-            <span className="text-primary">{uploadProgress}%</span>
-          </div>
-          <div className="mt-2 h-2 overflow-hidden rounded-full bg-primary/10">
-            <div
-              className="h-full rounded-full bg-primary transition-all duration-300"
-              style={{ width: `${uploadProgress}%` }}
-            />
-          </div>
-        </div>
+      {fileProgress.length > 0 && (
+        <UploadProgress
+          files={fileProgress}
+          overallProgress={overallProgress}
+          onCancel={uploading ? handleCancelUpload : undefined}
+        />
       )}
 
       {/* Completeness Table */}
@@ -492,7 +466,6 @@ export default function DocumentsPage({
                 </Badge>
               </div>
             </div>
-            {/* Progress bar */}
             <div className="mt-2 h-2 overflow-hidden rounded-full bg-muted">
               <div
                 className={cn(
@@ -539,49 +512,16 @@ export default function DocumentsPage({
         </div>
       )}
 
-      {/* Uploaded Documents List */}
+      {/* Uploaded Documents List with bulk edit */}
       {documents.length > 0 && (
-        <div className="rounded-2xl border border-border bg-card">
-          <div className="border-b border-border px-5 py-3">
-            <h2 className="font-serif text-sm font-semibold text-card-foreground">
-              Documents envoyés ({documents.length})
-            </h2>
-          </div>
-
-          <ul className="divide-y divide-border/50">
-            {documents.map((doc) => (
-              <li key={doc.id} className="flex items-center justify-between px-5 py-3 hover:bg-muted/50">
-                <div className="flex items-center gap-3">
-                  <FileText className="h-5 w-5 flex-shrink-0 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm font-medium text-card-foreground">{doc.filename}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {documentTypeLabels[doc.type] || doc.type} — {formatFileSize(doc.file_size)} — {new Date(doc.added_at).toLocaleDateString('fr-FR')}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-1">
-                  {doc.filename?.toLowerCase().endsWith('.pdf') && (
-                    <button
-                      onClick={() => setPreviewDoc(doc)}
-                      className="rounded-xl p-1.5 text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
-                      title="Aperçu"
-                    >
-                      <Eye className="h-4 w-4" />
-                    </button>
-                  )}
-                  <button
-                    onClick={() => handleDelete(doc.id)}
-                    className="rounded-xl p-1.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
-                    title="Supprimer"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
+        <DocumentList
+          documents={documents}
+          missionId={missionId}
+          onDelete={handleDelete}
+          onBulkDelete={handleBulkDelete}
+          onPreview={setPreviewDoc}
+          onRefresh={fetchData}
+        />
       )}
 
       {/* Empty state */}

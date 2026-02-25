@@ -262,7 +262,7 @@ export default function ProjectAnalysisPage({
   const scenarioMeta = scenario ? SCENARIO_META[scenario] : null
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6 p-6 lg:p-8 animate-fade-in">
+    <div className="mx-auto max-w-3xl space-y-6 animate-fade-in">
       {/* Header */}
       <div>
         <h1 className="font-serif text-2xl tracking-tight text-foreground">

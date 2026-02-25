@@ -100,7 +100,7 @@ export default function ProjectTracesPage({
   }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 p-6 lg:p-8 animate-fade-in">
+    <div className="mx-auto max-w-4xl space-y-6 animate-fade-in">
       {/* Header */}
       <div>
         <h1 className="font-serif text-2xl tracking-tight text-foreground">

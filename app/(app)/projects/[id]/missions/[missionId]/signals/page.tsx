@@ -126,7 +126,7 @@ export default function ProjectSignalsPage({
   const investigateCount = stats?.by_decision?.to_investigate ?? signals.filter((s) => s.human_decision === 'to_investigate').length
 
   return (
-    <div className={cn('mx-auto max-w-5xl space-y-6 p-6 lg:p-8', 'animate-fade-in')}>
+    <div className={cn('mx-auto max-w-5xl space-y-6', 'animate-fade-in')}>
       {/* Header */}
       <div>
         <div className="flex items-center gap-3">

@@ -167,7 +167,76 @@ export async function POST(
   return successResponse(uploadedDocs, 201)
 }
 
-// DELETE /api/projects/[id]/documents?documentId=uuid
+// PATCH /api/projects/[id]/documents — Bulk reclassify
+// Body: { documentIds: string[], type: string }
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id: projectId } = await params
+
+  let session
+  try {
+    session = await requireSession(req)
+  } catch (response) {
+    return response as Response
+  }
+
+  try {
+    await requireProjectOwnership(projectId, session.license_id)
+  } catch (response) {
+    return response as Response
+  }
+
+  let body: { documentIds?: string[]; type?: string }
+  try {
+    body = await req.json()
+  } catch {
+    return errorResponse('Corps de requete JSON invalide.', 'VALIDATION_ERROR', 400)
+  }
+
+  const docIds = body.documentIds ?? []
+  const newType = body.type
+
+  if (docIds.length === 0) {
+    return errorResponse('Le parametre "documentIds" est requis.', 'VALIDATION_ERROR', 400)
+  }
+
+  if (!newType || !VALID_DOC_TYPES.includes(newType as DocumentType)) {
+    return errorResponse(
+      `Type de document invalide. Types acceptes : ${VALID_DOC_TYPES.join(', ')}`,
+      'VALIDATION_ERROR',
+      400
+    )
+  }
+
+  const supabase = createServerSupabaseClient()
+  let updated = 0
+
+  for (const docId of docIds) {
+    const { data: doc } = await supabase
+      .from('documents')
+      .select('id')
+      .eq('id', docId)
+      .eq('project_id', projectId)
+      .single()
+
+    if (!doc) continue
+
+    const { error: updateError } = await supabase
+      .from('documents')
+      .update({ type: newType })
+      .eq('id', docId)
+
+    if (!updateError) updated++
+  }
+
+  return successResponse({ updated })
+}
+
+// DELETE /api/projects/[id]/documents
+// Single: ?documentId=uuid
+// Bulk:   ?documentIds=uuid1,uuid2,uuid3
 export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -188,35 +257,49 @@ export async function DELETE(
   }
 
   const url = new URL(req.url)
-  const documentId = url.searchParams.get('documentId')
+  const singleId = url.searchParams.get('documentId')
+  const bulkIds = url.searchParams.get('documentIds')
 
-  if (!documentId) {
-    return errorResponse('Le parametre "documentId" est requis.', 'VALIDATION_ERROR', 400)
+  let docIds: string[] = []
+  if (bulkIds) {
+    docIds = bulkIds.split(',').map((id) => id.trim()).filter(Boolean)
+  } else if (singleId) {
+    docIds = [singleId]
+  }
+
+  if (docIds.length === 0) {
+    return errorResponse('Le parametre "documentId" ou "documentIds" est requis.', 'VALIDATION_ERROR', 400)
   }
 
   const supabase = createServerSupabaseClient()
+  let deleted = 0
 
-  const { data: document, error: fetchError } = await supabase
-    .from('documents')
-    .select('*')
-    .eq('id', documentId)
-    .eq('project_id', projectId)
-    .single()
+  for (const docId of docIds) {
+    const { data: document, error: fetchError } = await supabase
+      .from('documents')
+      .select('*')
+      .eq('id', docId)
+      .eq('project_id', projectId)
+      .single()
 
-  if (fetchError || !document) {
-    return errorResponse('Document non trouve dans ce projet.', 'NOT_FOUND', 404)
+    if (fetchError || !document) continue
+
+    await supabase.storage.from('documents').remove([document.storage_path])
+
+    const { error: deleteError } = await supabase
+      .from('documents')
+      .delete()
+      .eq('id', docId)
+
+    if (!deleteError) deleted++
   }
 
-  await supabase.storage.from('documents').remove([document.storage_path])
-
-  const { error: deleteError } = await supabase
-    .from('documents')
-    .delete()
-    .eq('id', documentId)
-
-  if (deleteError) {
-    return errorResponse('Erreur lors de la suppression du document.', 'INTERNAL_ERROR', 500)
+  if (!bulkIds) {
+    if (deleted === 0) {
+      return errorResponse('Document non trouve dans ce projet.', 'NOT_FOUND', 404)
+    }
+    return successResponse({ success: true as const })
   }
 
-  return successResponse({ success: true as const })
+  return successResponse({ deleted })
 }

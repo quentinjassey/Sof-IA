@@ -164,7 +164,7 @@ export default function SettingsPage() {
   ]
 
   return (
-    <div className="animate-fade-in mx-auto max-w-2xl space-y-8">
+    <div className="animate-fade-in mx-auto h-full max-w-2xl space-y-8 overflow-y-auto p-5 sm:p-6 lg:p-8">
       {/* Page heading */}
       <div>
         <h1 className="font-serif text-2xl tracking-tight text-foreground">

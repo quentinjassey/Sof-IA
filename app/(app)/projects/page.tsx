@@ -128,7 +128,7 @@ export default function ProjectsPage() {
   )
 
   return (
-    <div className="mx-auto max-w-5xl">
+    <div className="mx-auto h-full max-w-5xl overflow-y-auto p-5 sm:p-6 lg:p-8">
       <div className="mb-8 flex items-end justify-between">
         <div>
           <h1 className="font-serif text-2xl tracking-tight text-foreground">

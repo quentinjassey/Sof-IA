@@ -1,0 +1,22 @@
+JournalCode|JournalLib|EcritureNum|EcritureDate|CompteNum|CompteLib|CompAuxNum|CompAuxLib|PieceRef|PieceDate|EcritureLib|Debit|Credit|EcritureLet|DateLet|ValidDate|Montantdevise|Idevise
+VE|Ventes|VE-2025-1244|20251222|411000|Clients — Precimetal SA|C0501|Precimetal SA|FA-2025-1244|20251222|Vente pieces usinees CN — Cde CMD-PM-2025-0843|31176,00|0,00|||20251231||
+VE|Ventes|VE-2025-1244|20251222|701000|Ventes de produits finis|||FA-2025-1244|20251222|Vente pieces usinees CN — Cde CMD-PM-2025-0843|0,00|25980,00|||20251231||
+VE|Ventes|VE-2025-1244|20251222|445710|TVA collectee 20%|||FA-2025-1244|20251222|Vente pieces usinees CN — Cde CMD-PM-2025-0843|0,00|5196,00|||20251231||
+VE|Ventes|VE-2025-1245|20251226|411000|Clients — Hydraulique Systemes SARL|C0502|Hydraulique Systemes SARL|FA-2025-1245|20251226|Vente sous-ensembles hydrauliques — Cde CMD-HS-2025-0217|21864,00|0,00|||20251231||
+VE|Ventes|VE-2025-1245|20251226|701000|Ventes de produits finis|||FA-2025-1245|20251226|Vente sous-ensembles hydrauliques — Cde CMD-HS-2025-0217|0,00|18220,00|||20251231||
+VE|Ventes|VE-2025-1245|20251226|445710|TVA collectee 20%|||FA-2025-1245|20251226|Vente sous-ensembles hydrauliques — Cde CMD-HS-2025-0217|0,00|3644,00|||20251231||
+VE|Ventes|VE-2025-1246|20251228|411000|Clients — Precimetal SA|C0501|Precimetal SA|FA-2025-1246|20251228|Vente chassis mecano-soudes et pieces usinees — Cde CMD-PM-2025-0851|39048,00|0,00|||20251231||
+VE|Ventes|VE-2025-1246|20251228|701000|Ventes de produits finis|||FA-2025-1246|20251228|Vente chassis mecano-soudes et pieces usinees — Cde CMD-PM-2025-0851|0,00|32540,00|||20251231||
+VE|Ventes|VE-2025-1246|20251228|445710|TVA collectee 20%|||FA-2025-1246|20251228|Vente chassis mecano-soudes et pieces usinees — Cde CMD-PM-2025-0851|0,00|6508,00|||20251231||
+VE|Ventes|VE-2025-1247|20251229|411000|Clients — Hydraulique Systemes SARL|C0502|Hydraulique Systemes SARL|FA-2025-1247|20251229|Vente distributeurs hydrauliques et raccords — Cde CMD-HS-2025-0224|13920,00|0,00|||20251231||
+VE|Ventes|VE-2025-1247|20251229|701000|Ventes de produits finis|||FA-2025-1247|20251229|Vente distributeurs hydrauliques et raccords — Cde CMD-HS-2025-0224|0,00|11600,00|||20251231||
+VE|Ventes|VE-2025-1247|20251229|445710|TVA collectee 20%|||FA-2025-1247|20251229|Vente distributeurs hydrauliques et raccords — Cde CMD-HS-2025-0224|0,00|2320,00|||20251231||
+HA|Achats|HA-2025-0480|20251223|601000|Achats matieres premieres|||FRN-2025-0480|20251223|Achat bruts de fonderie — Lot FR-2025-12|16650,00|0,00|||20251231||
+HA|Achats|HA-2025-0480|20251223|445660|TVA deductible sur ABS|||FRN-2025-0480|20251223|Achat bruts de fonderie — Lot FR-2025-12|3330,00|0,00|||20251231||
+HA|Achats|HA-2025-0480|20251223|401000|Fournisseurs — Fonderies du Rhone SA|F0301|Fonderies du Rhone SA|FRN-2025-0480|20251223|Achat bruts de fonderie — Lot FR-2025-12|0,00|19980,00|||20251231||
+HA|Achats|HA-2025-0481|20251230|601000|Achats matieres premieres|||FRN-2025-0481|20251230|Achat barres acier et toles aluminium — Cde ASL-2025-12|9000,00|0,00|||20251231||
+HA|Achats|HA-2025-0481|20251230|445660|TVA deductible sur ABS|||FRN-2025-0481|20251230|Achat barres acier et toles aluminium — Cde ASL-2025-12|1800,00|0,00|||20251231||
+HA|Achats|HA-2025-0481|20251230|401000|Fournisseurs — Aciers Speciaux Lyon SAS|F0302|Aciers Speciaux Lyon SAS|FRN-2025-0481|20251230|Achat barres acier et toles aluminium — Cde ASL-2025-12|0,00|10800,00|||20251231||
+VE|Ventes|VE-2026-0012|20260112|411000|Clients — Hydraulique Systemes SARL|C0502|Hydraulique Systemes SARL|AV-2026-0012|20260112|Avoir sur FA-2025-1245 — retour partiel non-conformite|0,00|5466,00|||20260131||
+VE|Ventes|VE-2026-0012|20260112|701000|Ventes de produits finis|||AV-2026-0012|20260112|Avoir sur FA-2025-1245 — retour partiel non-conformite|4555,00|0,00|||20260131||
+VE|Ventes|VE-2026-0012|20260112|445710|TVA collectee 20%|||AV-2026-0012|20260112|Avoir sur FA-2025-1245 — retour partiel non-conformite|911,00|0,00|||20260131||

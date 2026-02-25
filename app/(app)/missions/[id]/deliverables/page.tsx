@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, use } from 'react'
+import { useState, useEffect, useCallback, useMemo, use } from 'react'
 import {
   FileCheck,
   FileSpreadsheet,
@@ -12,6 +12,7 @@ import {
   AlertCircle,
   Info,
   Eye,
+  Scale,
 } from 'lucide-react'
 import DisclaimerBanner from '@/components/ui/DisclaimerBanner'
 import { Button } from '@/components/ui/Button'
@@ -48,6 +49,12 @@ const deliverableMeta: Record<DeliverableType, DeliverableMeta> = {
     icon: <FileSpreadsheet className="h-6 w-6 text-primary" />,
     formatLabel: 'XLSX',
   },
+  tableau_rapprochement: {
+    title: 'Tableau de rapprochement et justification du CA',
+    description: 'Détail pièce par pièce des écritures testées, rapprochement factures/BL, et couverture du chiffre d\'affaires.',
+    icon: <Scale className="h-6 w-6 text-primary" />,
+    formatLabel: 'XLSX',
+  },
   synthese_preanalyse: {
     title: 'Synthèse de pré-analyse (NEP 230)',
     description: 'Document de synthèse intégrable au dossier de travail. Périmètre, constats, décisions et limites.',
@@ -62,8 +69,7 @@ const deliverableMeta: Record<DeliverableType, DeliverableMeta> = {
   },
 }
 
-// Order of deliverables
-const deliverableOrder: DeliverableType[] = [
+const BASE_DELIVERABLE_ORDER: DeliverableType[] = [
   'checklist_completude',
   'tableau_signaux',
   'synthese_preanalyse',
@@ -146,6 +152,15 @@ export default function DeliverablesPage({
   function getDeliverable(type: DeliverableType): Deliverable | undefined {
     return deliverables.find((d) => d.type === type)
   }
+
+  // Dynamic order: include scenario-specific deliverables only when they exist
+  const deliverableOrder = useMemo(() => {
+    const order = [...BASE_DELIVERABLE_ORDER]
+    if (deliverables.some((d) => d.type === 'tableau_rapprochement')) {
+      order.splice(2, 0, 'tableau_rapprochement')
+    }
+    return order
+  }, [deliverables])
 
   // --- Render ---
 

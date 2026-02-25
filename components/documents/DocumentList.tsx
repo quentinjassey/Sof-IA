@@ -40,9 +40,10 @@ interface DocumentListProps {
 
 const documentTypeLabels: Record<string, string> = {
   fec: 'FEC',
-  facture_vente: 'Facture de vente',
+  facture_vente: 'Facture de vente / avoir',
   facture_achat: 'Facture fournisseur',
   bon_livraison: 'Bon de livraison',
+  bon_commande: 'Bon de commande',
   contrat: 'Contrat',
   annexe: 'Annexe',
   bilan: 'Bilan',
@@ -247,7 +248,7 @@ export function DocumentList({
 
               {!selectionMode && (
                 <div className="flex items-center gap-1">
-                  {doc.filename?.toLowerCase().endsWith('.pdf') && (
+                  {(doc.filename?.toLowerCase().endsWith('.pdf') || doc.type === 'fec') && (
                     <button
                       onClick={() => onPreview(doc)}
                       className="rounded-xl p-1.5 text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { X, Download, Loader2, FileText, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Document, Page, pdfjs } from 'react-pdf'
 import { cn } from '@/lib/utils'
@@ -76,7 +77,7 @@ export function PdfPreviewModal({
 
   if (!isOpen) return null
 
-  return (
+  const modal = (
     <div className="fixed inset-0 z-[100] flex items-center justify-center">
       {/* Overlay */}
       <div
@@ -188,4 +189,6 @@ export function PdfPreviewModal({
       </div>
     </div>
   )
+
+  return createPortal(modal, document.body)
 }

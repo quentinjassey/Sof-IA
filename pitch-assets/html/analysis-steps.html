@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: transparent;
+    -webkit-font-smoothing: antialiased;
+  }
+  #steps {
+    display: inline-block;
+    padding: 16px;
+  }
+  .wrapper {
+    width: 420px;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  .step {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 10px 0;
+  }
+  .step-indicator {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+    width: 28px;
+  }
+  .step-dot {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .step-dot-done {
+    background: #16a34a;
+  }
+  .step-dot-done svg { color: #ffffff; }
+  .step-line {
+    width: 2px;
+    height: 16px;
+    background: #16a34a;
+    margin-top: 4px;
+  }
+  .step-line-last { display: none; }
+  .step-content {
+    padding-top: 2px;
+  }
+  .step-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: #1f2937;
+  }
+  .step-number {
+    color: #6b7280;
+    font-weight: 400;
+  }
+</style>
+</head>
+<body>
+<div id="steps">
+  <div class="wrapper">
+
+    <div class="step">
+      <div class="step-indicator">
+        <div class="step-dot step-dot-done">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div class="step-line"></div>
+      </div>
+      <div class="step-content">
+        <p class="step-label"><span class="step-number">1.</span> Lecture du FEC</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-indicator">
+        <div class="step-dot step-dot-done">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div class="step-line"></div>
+      </div>
+      <div class="step-content">
+        <p class="step-label"><span class="step-number">2.</span> Extraction des pi&egrave;ces justificatives</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-indicator">
+        <div class="step-dot step-dot-done">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div class="step-line"></div>
+      </div>
+      <div class="step-content">
+        <p class="step-label"><span class="step-number">3.</span> Rapprochement documentaire</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-indicator">
+        <div class="step-dot step-dot-done">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div class="step-line"></div>
+      </div>
+      <div class="step-content">
+        <p class="step-label"><span class="step-number">4.</span> Analyse des signaux</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-indicator">
+        <div class="step-dot step-dot-done">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div class="step-line"></div>
+      </div>
+      <div class="step-content">
+        <p class="step-label"><span class="step-number">5.</span> Consolidation des r&eacute;sultats</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-indicator">
+        <div class="step-dot step-dot-done">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+      </div>
+      <div class="step-content">
+        <p class="step-label"><span class="step-number">6.</span> G&eacute;n&eacute;ration des livrables</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+</body>
+</html>

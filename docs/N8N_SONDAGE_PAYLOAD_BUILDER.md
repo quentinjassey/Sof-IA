@@ -17,6 +17,34 @@ Ce document décrit comment ajouter au workflow N8N **Sondage** les nœuds néce
 
 ---
 
+## Conventions importantes pour le workflow Sondage
+
+### Filtrage des écritures FEC
+**Ne PAS filtrer par code journal** (VT, VE, VTE...) car les codes varient d'une entreprise à l'autre. Utiliser plutôt un filtrage par **numéro de compte** :
+- Comptes de produits (7xxx) et/ou comptes clients (411xxx) pour identifier les écritures de vente.
+- Cela garantit que le workflow fonctionne quel que soit le plan de journaux de l'entreprise.
+
+### Gestion des avoirs clients
+Les avoirs (notes de crédit) font partie du cycle de vente et doivent être inclus dans l'analyse :
+- Un avoir a un **montant négatif** dans le FEC (ou un débit/crédit inversé).
+- Chaque item `items_complets` doit inclure `journal_code`, `compte_num` (valeurs réelles du FEC), et idéalement `is_avoir: true` si détecté.
+- **SCA-001 (BL absent) ne s'applique PAS aux avoirs** — aucun bon de livraison n'est attendu pour un avoir.
+- **SCA-002 (écart de montant)** : comparer les montants en **valeur absolue** (`Math.abs()`) pour gérer correctement les avoirs.
+
+### Normalisation des montants
+- Le `montant_fec` transmis dans `items_complets` peut être positif (facture) ou négatif (avoir).
+- Le transformer Next.js gère la normalisation (débit/crédit, affichage en valeur absolue).
+- Ne PAS normaliser les montants dans N8N — transmettre les valeurs signées telles quelles.
+
+### Types de documents attendus (sondage_ca)
+- `fec` (requis) — Fichier des Écritures Comptables
+- `facture_vente` (requis) — Inclut les factures ET les avoirs clients
+- `bon_livraison` (requis) — Bons de livraison (non requis pour les avoirs)
+- `bon_commande` (optionnel) — Bons de commande clients
+- `contrat` (optionnel) — Contrats clients
+
+---
+
 ## 1. Schéma des ajouts
 
 ```
@@ -149,7 +177,7 @@ rapprochements.forEach((r, i) => {
 
 // ---------- 3) Completeness (attendu vs reçu) ----------
 const docTypesExpected = {
-  sondage_ca: ["fec", "facture_vente", "bon_livraison", "contrat", "annexe"],
+  sondage_ca: ["fec", "facture_vente", "bon_livraison", "bon_commande", "contrat"],
   cutoff: ["fec", "facture_vente", "facture_achat", "bon_livraison", "contrat"],
   pointage: ["bilan", "compte_resultat", "annexe", "fec"],
 };
@@ -158,8 +186,8 @@ const requiredByType = {
     fec: true,
     facture_vente: true,
     bon_livraison: true,
+    bon_commande: false,
     contrat: false,
-    annexe: false,
   },
   cutoff: {
     fec: true,
@@ -172,9 +200,10 @@ const requiredByType = {
 };
 const labels = {
   fec: "Fichier des Écritures Comptables (FEC)",
-  facture_vente: "Factures de vente",
+  facture_vente: "Factures de vente et avoirs clients",
   facture_achat: "Factures fournisseurs",
   bon_livraison: "Bons de livraison",
+  bon_commande: "Bons de commande clients",
   contrat: "Contrats",
   annexe: "Annexe aux comptes annuels",
   bilan: "Bilan",
@@ -381,6 +410,16 @@ Next.js appelle `GET /missions/analyze/:id/results` et utilise ce JSON pour `imp
 
 Pour que **Build Sofia Payload** fonctionne sans changement :
 
+- Le nœud FEC doit produire des écritures avec les champs réels du FEC : `journal_code`, `compte_num`, etc. **Ne pas hardcoder** ces valeurs.
+
+- Chaque item dans `items_complets` (sortie Code4 / consolidation) doit inclure :
+  - `piece_ref`, `libelle`, `montant_fec` (signé : positif=facture, négatif=avoir)
+  - `journal_code` (valeur réelle du FEC, ex. "VT", "VEN", "JV"...)
+  - `compte_num` (valeur réelle du FEC, ex. "411000", "701000"...)
+  - `is_avoir` (booléen, optionnel) — si `true`, indique un avoir client ; sinon le transformer détecte automatiquement via le signe du montant ou le libellé
+  - `date_ecriture`, `facture_trouvee`, `bl_trouve`, `nb_signaux`
+  - `signaux[]`, `facture`, `bl`
+
 - Code4 doit produire un tableau **`signals`** où chaque élément contient au minimum :
   - `rule_triggered` (ex. `SCA-001`, `SCA-002`) ou `rule` ;
   - `description` ;
@@ -388,6 +427,7 @@ Pour que **Build Sofia Payload** fonctionne sans changement :
   - `source_document`, `source_page`, `source_extract` si disponibles ;
   - `explicability` ou champs séparés (`reasoning`, `documents_compared`, `rule_source`) ;
   - optionnel : `ecriture_id`, `document_id`, `rapprochement_id` (références aux id générés dans ce payload).
+  - **Important** : ne PAS émettre SCA-001 pour les avoirs (montant négatif ou `is_avoir: true`).
 
 - Code4 doit produire un tableau **`rapprochements`** où chaque élément contient :
   - `ecriture_id` (ou `ecriture_index` pour mapper vers `ecritures[i].id`) ;

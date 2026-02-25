@@ -13,6 +13,7 @@ export type DocumentType =
   | 'facture_vente'
   | 'facture_achat'
   | 'bon_livraison'
+  | 'bon_commande'
   | 'contrat'
   | 'annexe'
   | 'bilan'
@@ -45,15 +46,15 @@ export const expectedDocuments: Record<ScenarioType, ExpectedDocument[]> = {
       type: 'fec',
       label: 'Fichier des Ecritures Comptables (FEC)',
       description:
-        'Export du FEC au format DGFiP (fichier tabulaire). Contient l\'ensemble des ecritures du journal de ventes pour l\'exercice audite.',
+        'Export du FEC au format DGFiP (fichier tabulaire). Contient l\'ensemble des ecritures comptables de l\'exercice audite.',
       required: true,
       format: ['.txt', '.csv'],
     },
     {
       type: 'facture_vente',
-      label: 'Factures de vente (echantillon)',
+      label: 'Factures de vente et avoirs clients (echantillon)',
       description:
-        'Factures de vente correspondant aux ecritures selectionnees par le commissaire aux comptes pour le sondage. Chaque facture doit comporter : numero, date, client, description, montant HT, TVA et TTC.',
+        'Factures de vente et avoirs clients correspondant aux ecritures selectionnees par le commissaire aux comptes pour le sondage. Inclut les factures classiques et les avoirs (notes de credit). Chaque document doit comporter : numero, date, client, description, montant HT, TVA et TTC.',
       required: true,
       format: ['.pdf'],
     },
@@ -61,23 +62,23 @@ export const expectedDocuments: Record<ScenarioType, ExpectedDocument[]> = {
       type: 'bon_livraison',
       label: 'Bons de livraison',
       description:
-        'Bons de livraison ou preuves d\'expedition associes aux factures de vente. Permettent de verifier la realite de la livraison et le rattachement temporel de l\'operation.',
+        'Bons de livraison ou preuves d\'expedition associes aux factures de vente. Permettent de verifier la realite de la livraison et le rattachement temporel de l\'operation. Non requis pour les avoirs clients.',
       required: true,
+      format: ['.pdf'],
+    },
+    {
+      type: 'bon_commande',
+      label: 'Bons de commande clients',
+      description:
+        'Bons de commande ou confirmations de commande emis par les clients, si disponibles. Permettent de renforcer la chaine documentaire en verifiant la coherence entre commande, livraison et facturation.',
+      required: false,
       format: ['.pdf'],
     },
     {
       type: 'contrat',
       label: 'Contrats clients',
       description:
-        'Contrats-cadres ou bons de commande, si disponibles. Permettent de verifier les conditions de vente et la coherence avec les factures.',
-      required: false,
-      format: ['.pdf'],
-    },
-    {
-      type: 'annexe',
-      label: 'Annexe aux comptes annuels',
-      description:
-        'Annexe aux comptes annuels, si disponible. Permet la verification de la coherence du chiffre d\'affaires declare.',
+        'Contrats-cadres ou accords commerciaux, si disponibles. Permettent de verifier les conditions de vente et la coherence avec les factures.',
       required: false,
       format: ['.pdf'],
     },
@@ -229,9 +230,10 @@ export function getAcceptedFormats(scenario: ScenarioType, docType: DocumentType
  */
 export const documentTypeLabels: Record<DocumentType, string> = {
   fec: 'Fichier des Ecritures Comptables (FEC)',
-  facture_vente: 'Facture de vente',
+  facture_vente: 'Facture de vente / avoir client',
   facture_achat: 'Facture fournisseur',
   bon_livraison: 'Bon de livraison / reception',
+  bon_commande: 'Bon de commande client',
   contrat: 'Contrat',
   annexe: 'Annexe aux comptes annuels',
   bilan: 'Bilan',

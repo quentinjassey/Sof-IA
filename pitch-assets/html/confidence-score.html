@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: transparent;
+    -webkit-font-smoothing: antialiased;
+  }
+  #confidence {
+    display: inline-block;
+    padding: 16px;
+  }
+  .card {
+    background: #ffffff;
+    border: 1px solid #e2e4ea;
+    border-radius: 20px;
+    overflow: hidden;
+    width: 480px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06), 0 0 1px rgba(0,0,0,0.04);
+  }
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 24px;
+    border-bottom: 1px solid #e2e4ea;
+  }
+  .card-header svg { color: #2d3a8c; }
+  .card-header h2 {
+    font-family: 'DM Serif Display', Georgia, serif;
+    font-size: 15px;
+    font-weight: 400;
+    color: #111827;
+  }
+  .card-body { padding: 20px 24px; }
+  .confidence-box { display: flex; align-items: center; gap: 16px; }
+  .confidence-score {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+    font-size: 22px;
+    font-weight: 700;
+    flex-shrink: 0;
+    background: rgba(45, 58, 140, 0.1);
+    color: #2d3a8c;
+  }
+  .confidence-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1f2937;
+  }
+  .confidence-desc {
+    font-size: 13px;
+    color: #6b7280;
+    margin-top: 3px;
+    line-height: 1.5;
+  }
+  .bar-container {
+    height: 8px;
+    background: #f0f1f5;
+    border-radius: 9999px;
+    overflow: hidden;
+    margin-top: 16px;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 9999px;
+    background: #2d3a8c;
+  }
+  .confidence-note {
+    font-size: 12px;
+    color: rgba(107, 114, 128, 0.7);
+    margin-top: 10px;
+    line-height: 1.5;
+  }
+</style>
+</head>
+<body>
+<div id="confidence">
+  <div class="card">
+    <div class="card-header">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+      <h2>Score de confiance</h2>
+    </div>
+    <div class="card-body">
+      <div class="confidence-box">
+        <div class="confidence-score">92%</div>
+        <div>
+          <p class="confidence-label">Confiance &eacute;lev&eacute;e</p>
+          <p class="confidence-desc">Ce signal repose sur une v&eacute;rification exhaustive de la pr&eacute;sence de documents. L'absence constat&eacute;e est factuelle et v&eacute;rifiable.</p>
+        </div>
+      </div>
+      <div class="bar-container">
+        <div class="bar-fill" style="width: 92%;"></div>
+      </div>
+      <p class="confidence-note">Ce score refl&egrave;te la fiabilit&eacute; de la d&eacute;tection par Sof'IA, pas la gravit&eacute; du constat. Le commissaire aux comptes reste seul juge de l'importance du signal.</p>
+    </div>
+  </div>
+</div>
+</body>
+</html>

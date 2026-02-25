@@ -43,6 +43,7 @@ export type DocumentType =
   | 'facture_vente'
   | 'facture_achat'
   | 'bon_livraison'
+  | 'bon_commande'
   | 'contrat'
   | 'annexe'
   | 'bilan'
@@ -62,6 +63,7 @@ export type SignalType =
 export type DeliverableType =
   | 'checklist_completude'
   | 'tableau_signaux'
+  | 'tableau_rapprochement'
   | 'synthese_preanalyse'
   | 'journal_tracabilite';
 

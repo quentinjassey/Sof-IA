@@ -1,10 +1,11 @@
 // =============================================================================
 // SOF'IA -- Deliverable Generator Service (Orchestrator)
-// Coordinates generation of all 4 deliverables:
+// Coordinates generation of all deliverables:
 //   1. Check-list de completude documentaire (PDF)
 //   2. Tableau des signaux documentaires (XLSX)
-//   3. Synthese de pre-analyse (PDF)
-//   4. Journal de tracabilite (PDF)
+//   3. Tableau de rapprochement et justification du CA (XLSX) — sondage_ca only
+//   4. Synthese de pre-analyse (PDF)
+//   5. Journal de tracabilite (PDF)
 //
 // This service fetches data from Supabase, delegates to individual generators,
 // uploads results to Supabase Storage, and records deliverable metadata.
@@ -31,9 +32,12 @@ import type {
   Signal,
   Completeness,
   Trace,
+  Ecriture,
+  Rapprochement,
 } from '@/types/database'
 import { generateChecklistPdf } from './generators/checklist-generator'
 import { generateSignalsTableXlsx } from './generators/signals-table-generator'
+import { generateReconciliationTableXlsx } from './generators/reconciliation-table-generator'
 import { generateSynthesisPdf } from './generators/synthesis-generator'
 import { generateJournalPdf } from './generators/journal-generator'
 
@@ -56,6 +60,9 @@ interface DeliverableData {
   profile: Profile
   signals: Signal[]
   completeness: Completeness[]
+  ecritures: Ecriture[]
+  rapprochements: Rapprochement[]
+  caTotal: number | null
   traces: Trace[]
 }
 
@@ -101,6 +108,16 @@ const DELIVERABLE_DEFINITIONS: DeliverableDefinition[] = [
   },
 ]
 
+const SONDAGE_ONLY_DEFINITIONS: DeliverableDefinition[] = [
+  {
+    type: 'tableau_rapprochement',
+    format: 'xlsx',
+    title: 'Tableau de rapprochement et justification du CA',
+    filename: 'tableau_rapprochement.xlsx',
+    contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  },
+]
+
 // -----------------------------------------------------------------------------
 // Main Orchestrator
 // -----------------------------------------------------------------------------
@@ -128,9 +145,15 @@ export async function generateAllDeliverables(
   // Fetch all required data
   const data = await fetchDeliverableData(supabase, missionId, licenseId)
 
+  // Build list of definitions: common + scenario-specific
+  const definitions = [...DELIVERABLE_DEFINITIONS]
+  if (data.mission.scenario === 'sondage_ca') {
+    definitions.push(...SONDAGE_ONLY_DEFINITIONS)
+  }
+
   // Generate all deliverables
   const results: Deliverable[] = []
-  for (const definition of DELIVERABLE_DEFINITIONS) {
+  for (const definition of definitions) {
     const deliverable = await generateSingleDeliverable(
       supabase,
       missionId,
@@ -160,9 +183,10 @@ export async function regenerateDeliverables(
   types?: DeliverableType[]
 ): Promise<Deliverable[]> {
   // Determine which deliverables to regenerate
+  const allDefs = [...DELIVERABLE_DEFINITIONS, ...SONDAGE_ONLY_DEFINITIONS]
   const definitions = types
-    ? DELIVERABLE_DEFINITIONS.filter((d) => types.includes(d.type))
-    : DELIVERABLE_DEFINITIONS
+    ? allDefs.filter((d) => types.includes(d.type))
+    : allDefs
 
   if (definitions.length === 0) {
     return []
@@ -259,12 +283,39 @@ async function fetchDeliverableData(
     throw new Error(`Erreur lors de la recuperation des traces : ${tracesError.message}`)
   }
 
+  // Fetch ecritures and rapprochements (for reconciliation deliverable)
+  const { data: ecritures } = await supabase
+    .from('ecritures')
+    .select('*')
+    .eq('mission_id', missionId)
+    .order('ecriture_date', { ascending: true })
+
+  const { data: rapprochements } = await supabase
+    .from('rapprochements')
+    .select('*')
+    .eq('mission_id', missionId)
+
+  // Extract CA total from FEC completeness note (format: "... CA total: 123 456 EUR")
+  let caTotal: number | null = null
+  const fecEntry = (completeness || []).find(
+    (c) => c.doc_type === 'fec' || c.doc_type === 'FEC'
+  )
+  if (fecEntry?.note) {
+    const match = fecEntry.note.match(/CA total\s*:\s*([\d\s,.]+)\s*EUR/i)
+    if (match) {
+      caTotal = parseFloat(match[1].replace(/\s/g, '').replace(',', '.'))
+    }
+  }
+
   return {
     mission: mission as Mission,
     profile: profile as Profile,
     signals: (signals || []) as Signal[],
     completeness: (completeness || []) as Completeness[],
     traces: (traces || []) as Trace[],
+    ecritures: (ecritures || []) as Ecriture[],
+    rapprochements: (rapprochements || []) as Rapprochement[],
+    caTotal,
   }
 }
 
@@ -435,6 +486,36 @@ async function generateFileBuffer(
           traces_count: traces.length,
           sofia_actions: traces.filter((t) => t.actor === 'sofia').length,
           user_actions: traces.filter((t) => t.actor === 'user').length,
+        },
+      }
+    }
+
+    case 'tableau_rapprochement': {
+      const { ecritures, rapprochements, caTotal } = data
+      const buffer = await generateReconciliationTableXlsx({
+        mission,
+        profile,
+        ecritures,
+        rapprochements,
+        caTotal,
+      })
+      const totalTested = ecritures.reduce(
+        (s, e) => s + (Number(e.debit) || 0) + (Number(e.credit) || 0),
+        0
+      )
+      return {
+        definition,
+        buffer,
+        contentJson: {
+          type: 'tableau_rapprochement',
+          ecritures_count: ecritures.length,
+          rapprochements_count: rapprochements.length,
+          montant_total_teste: totalTested,
+          ca_total: caTotal,
+          couverture_pct:
+            caTotal && caTotal > 0
+              ? Math.round((totalTested / caTotal) * 10000) / 100
+              : null,
         },
       }
     }

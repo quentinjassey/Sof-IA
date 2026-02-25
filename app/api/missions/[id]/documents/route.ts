@@ -23,6 +23,7 @@ const VALID_DOC_TYPES: DocumentType[] = [
   'facture_vente',
   'facture_achat',
   'bon_livraison',
+  'bon_commande',
   'contrat',
   'annexe',
   'bilan',
@@ -41,8 +42,10 @@ function detectDocumentType(filename: string): DocumentType {
     if (lower.includes('fec')) return 'fec'
   }
   if (lower.includes('facture') && lower.includes('achat')) return 'facture_achat'
+  if (lower.includes('avoir') || lower.startsWith('av-') || lower.startsWith('av_')) return 'facture_vente'
   if (lower.includes('facture') || lower.startsWith('fa-') || lower.startsWith('fa_')) return 'facture_vente'
-  if (lower.includes('bon') || lower.includes('livraison') || lower.startsWith('bl-') || lower.startsWith('bl_')) return 'bon_livraison'
+  if (lower.includes('livraison') || lower.startsWith('bl-') || lower.startsWith('bl_')) return 'bon_livraison'
+  if (lower.includes('commande') || lower.startsWith('bc-') || lower.startsWith('bc_')) return 'bon_commande'
   if (lower.includes('contrat') || lower.startsWith('ct-') || lower.startsWith('ct_')) return 'contrat'
   if (lower.includes('annexe')) return 'annexe'
   if (lower.includes('bilan')) return 'bilan'

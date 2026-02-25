@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1920, height=1080">
+  <title>Sof'IA — Pitch HackAudit 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=DM+Serif+Display&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0c0a1f;
+      --primary: #2b1fa8;
+      --primary-light: #4f3fd4;
+      --primary-glow: rgba(43, 31, 168, 0.25);
+      --w: #ffffff;
+      --w80: rgba(255,255,255,0.8);
+      --w60: rgba(255,255,255,0.6);
+      --w40: rgba(255,255,255,0.4);
+      --w25: rgba(255,255,255,0.25);
+      --w12: rgba(255,255,255,0.12);
+      --w06: rgba(255,255,255,0.06);
+      --w03: rgba(255,255,255,0.03);
+      --sans: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      --serif: 'DM Serif Display', Georgia, serif;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      width: 100vw; height: 100vh;
+      overflow: hidden;
+      background: var(--bg);
+      font-family: var(--sans);
+      color: var(--w);
+      cursor: none;
+      user-select: none;
+    }
+
+    /* ── Ambient ── */
+    .glow {
+      position: fixed;
+      border-radius: 50%;
+      pointer-events: none;
+      filter: blur(100px);
+    }
+    .g1 { width: 700px; height: 700px; background: rgba(43,31,168,0.07); top: 10%; left: 25%; }
+    .g2 { width: 500px; height: 500px; background: rgba(79,63,212,0.05); bottom: 15%; right: 20%; }
+
+    /* ── Persistent logo (top-left, visible from stage 2+) ── */
+    #top-logo {
+      position: fixed;
+      top: 28px;
+      left: 40px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      z-index: 50;
+      opacity: 0;
+      transform: translateY(-10px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+    #top-logo.visible { opacity: 1; transform: translateY(0); }
+    #top-logo .mini-icon {
+      width: 40px; height: 40px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 0 20px rgba(43,31,168,0.3);
+    }
+    #top-logo .mini-icon span {
+      font-family: var(--serif);
+      font-size: 18px;
+      color: var(--w);
+    }
+    #top-logo .mini-name {
+      font-family: var(--serif);
+      font-size: 22px;
+      color: var(--w80);
+    }
+
+    /* ── Stage container ── */
+    .stage {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+                  transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+      pointer-events: none;
+      z-index: 5;
+    }
+    .stage.active {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+    .stage.exit {
+      opacity: 0;
+      transform: translateY(-16px);
+    }
+
+    /* ── Stage 0: Hero Logo ── */
+    .hero-logo {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+    .hero-icon {
+      width: 110px; height: 110px;
+      border-radius: 24px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 0 80px var(--primary-glow), 0 16px 48px rgba(43,31,168,0.3);
+      animation: pulse 4s ease-in-out infinite;
+    }
+    .hero-icon span { font-family: var(--serif); font-size: 52px; color: var(--w); }
+    .hero-title { font-family: var(--serif); font-size: 56px; letter-spacing: -1px; }
+    .hero-sub {
+      font-size: 16px; color: var(--w40);
+      letter-spacing: 4px; text-transform: uppercase;
+    }
+
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 60px rgba(43,31,168,0.2), 0 16px 48px rgba(43,31,168,0.25); }
+      50% { box-shadow: 0 0 100px rgba(43,31,168,0.35), 0 16px 48px rgba(43,31,168,0.4); }
+    }
+
+    /* ── Stage 1: Pain Quote ── */
+    .quote {
+      font-family: var(--serif);
+      font-size: 38px;
+      line-height: 1.5;
+      text-align: center;
+      max-width: 860px;
+    }
+    .quote em { color: var(--primary-light); font-style: normal; }
+    .quote-label {
+      margin-top: 28px;
+      font-size: 11px; font-weight: 600;
+      letter-spacing: 5px; text-transform: uppercase;
+      color: var(--w25);
+    }
+
+    /* ── Stage 2: Flow ── */
+    .flow-title {
+      font-family: var(--serif);
+      font-size: 28px;
+      margin-bottom: 48px;
+      color: var(--w80);
+    }
+    .flow {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .flow-step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      padding: 20px 28px;
+      border-radius: 16px;
+      background: var(--w03);
+      border: 1px solid var(--w06);
+      min-width: 170px;
+      text-align: center;
+      opacity: 0;
+      transform: translateY(12px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+    .flow-step.vis { opacity: 1; transform: translateY(0); }
+    .flow-step.hl {
+      background: rgba(43,31,168,0.12);
+      border-color: rgba(43,31,168,0.3);
+    }
+    .flow-step .ico { font-size: 28px; }
+    .flow-step .lbl { font-size: 15px; font-weight: 600; }
+    .flow-step .sub { font-size: 12px; color: var(--w40); line-height: 1.4; }
+
+    .arrow {
+      color: var(--w25);
+      font-size: 22px;
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+    .arrow.vis { opacity: 1; }
+
+    /* ── Stage 3: Screenshots ── */
+    .screenshots {
+      display: flex;
+      gap: 28px;
+      align-items: flex-start;
+    }
+    .ss-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      opacity: 0;
+      transform: scale(0.92);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+    .ss-card.vis { opacity: 1; transform: scale(1); }
+
+    .ss-frame {
+      width: 400px;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid var(--w12);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 40px rgba(43,31,168,0.06);
+    }
+    .ss-frame img { width: 100%; display: block; }
+    .ss-label {
+      font-size: 14px; font-weight: 600;
+      color: var(--w60); letter-spacing: 1px;
+    }
+
+    /* ── Stage 4: Deliverables ── */
+    .del-title {
+      font-family: var(--serif);
+      font-size: 28px;
+      margin-bottom: 44px;
+      color: var(--w80);
+    }
+    .del-grid { display: flex; gap: 24px; }
+    .del-card {
+      padding: 28px 24px;
+      border-radius: 18px;
+      background: var(--w03);
+      border: 1px solid var(--w06);
+      text-align: center;
+      width: 210px;
+      opacity: 0;
+      transform: translateY(16px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+    .del-card.vis { opacity: 1; transform: translateY(0); }
+    .del-card .d-ico { font-size: 36px; margin-bottom: 14px; }
+    .del-card .d-name { font-size: 15px; font-weight: 600; margin-bottom: 8px; }
+    .del-card .d-fmt {
+      display: inline-block;
+      padding: 3px 12px;
+      border-radius: 8px;
+      font-size: 11px; font-weight: 600;
+      background: rgba(43,31,168,0.15);
+      color: var(--primary-light);
+      letter-spacing: 1px;
+    }
+
+    /* ── Stage 5: Tagline ── */
+    .tagline {
+      font-family: var(--serif);
+      font-size: 48px;
+      line-height: 1.5;
+      text-align: center;
+    }
+    .tagline .hl { color: var(--primary-light); }
+
+    .vals {
+      margin-top: 44px;
+      display: flex;
+      gap: 18px;
+    }
+    .val {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 22px;
+      border-radius: 14px;
+      background: var(--w03);
+      border: 1px solid var(--w06);
+      font-size: 16px; font-weight: 600;
+      color: var(--w60);
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+    .val.vis { opacity: 1; transform: translateY(0); }
+    .val .vi { font-size: 20px; }
+
+    .badge {
+      margin-top: 64px;
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      opacity: 0;
+      transition: opacity 0.6s ease 0.8s;
+    }
+    .badge.vis { opacity: 1; }
+    .badge .ln { width: 50px; height: 1px; background: var(--w12); }
+    .badge .tx {
+      font-size: 11px;
+      color: var(--w25);
+      letter-spacing: 4px;
+      text-transform: uppercase;
+    }
+
+    /* ── Progress ── */
+    #progress {
+      position: fixed;
+      bottom: 36px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 8px;
+      z-index: 100;
+    }
+    .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--w12);
+      transition: all 0.3s ease;
+    }
+    .dot.on { width: 28px; border-radius: 4px; background: var(--primary-light); }
+    .dot.done { background: var(--w25); }
+
+    #hint {
+      position: fixed;
+      bottom: 14px; right: 28px;
+      font-size: 10px;
+      color: var(--w12);
+      letter-spacing: 1px;
+      z-index: 100;
+      transition: opacity 0.5s ease;
+    }
+    #hint.off { opacity: 0; }
+  </style>
+</head>
+<body>
+  <div class="glow g1"></div>
+  <div class="glow g2"></div>
+
+  <!-- Persistent logo (stages 2-4) -->
+  <div id="top-logo">
+    <div class="mini-icon"><span>S'</span></div>
+    <div class="mini-name">Sof'IA</div>
+  </div>
+
+  <!-- ═══ Stage 0: Hero ═══ -->
+  <div class="stage" id="s0">
+    <div class="hero-logo">
+      <div class="hero-icon"><span>S'</span></div>
+      <div class="hero-title">Sof'IA</div>
+      <div class="hero-sub">Pré-analyse documentaire intelligente</div>
+    </div>
+  </div>
+
+  <!-- ═══ Stage 1: Pain ═══ -->
+  <div class="stage" id="s1">
+    <div class="quote">
+      Le temps passé sur les tâches mécaniques<br>
+      est du temps <em>perdu pour le jugement professionnel</em>.
+    </div>
+    <div class="quote-label">Le paradoxe du commissaire aux comptes</div>
+  </div>
+
+  <!-- ═══ Stage 2: Flow ═══ -->
+  <div class="stage" id="s2">
+    <div class="flow-title">Comment fonctionne Sof'IA</div>
+    <div class="flow">
+      <div class="flow-step" data-d="0">
+        <div class="ico">📄</div>
+        <div class="lbl">FEC + Pièces</div>
+        <div class="sub">Journaux, factures,<br>bons de livraison</div>
+      </div>
+      <div class="arrow" data-d="100">→</div>
+      <div class="flow-step" data-d="200">
+        <div class="ico">🔍</div>
+        <div class="lbl">Pré-analyse IA</div>
+        <div class="sub">Rapprochement,<br>détection de signaux</div>
+      </div>
+      <div class="arrow" data-d="300">→</div>
+      <div class="flow-step hl" data-d="400">
+        <div class="ico">⚡</div>
+        <div class="lbl">Signaux</div>
+        <div class="sub">Constats factuels,<br>explicables, sourcés</div>
+      </div>
+      <div class="arrow" data-d="500">→</div>
+      <div class="flow-step" data-d="600">
+        <div class="ico">👤</div>
+        <div class="lbl">Validation CAC</div>
+        <div class="sub">Décision humaine<br>tracée</div>
+      </div>
+      <div class="arrow" data-d="700">→</div>
+      <div class="flow-step" data-d="800">
+        <div class="ico">📋</div>
+        <div class="lbl">Livrables</div>
+        <div class="sub">Intégrables au<br>dossier de travail</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ Stage 3: Screenshots ═══ -->
+  <div class="stage" id="s3">
+    <div class="screenshots">
+      <div class="ss-card" data-d="0">
+        <div class="ss-frame">
+          <img src="screenshots/04-signals.png" alt="Signaux documentaires">
+        </div>
+        <div class="ss-label">Signaux documentaires</div>
+      </div>
+      <div class="ss-card" data-d="200">
+        <div class="ss-frame">
+          <img src="screenshots/05-signal-detail.png" alt="Détail & Explicabilité">
+        </div>
+        <div class="ss-label">Détail & Explicabilité</div>
+      </div>
+      <div class="ss-card" data-d="400">
+        <div class="ss-frame">
+          <img src="screenshots/06-deliverables.png" alt="Livrables">
+        </div>
+        <div class="ss-label">Livrables NEP 230</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ Stage 4: Deliverables ═══ -->
+  <div class="stage" id="s4">
+    <div class="del-title">4 livrables intégrables au dossier de travail</div>
+    <div class="del-grid">
+      <div class="del-card" data-d="0">
+        <div class="d-ico">✅</div>
+        <div class="d-name">Check-list de complétude</div>
+        <div class="d-fmt">PDF</div>
+      </div>
+      <div class="del-card" data-d="150">
+        <div class="d-ico">📊</div>
+        <div class="d-name">Tableau des signaux</div>
+        <div class="d-fmt">XLSX</div>
+      </div>
+      <div class="del-card" data-d="300">
+        <div class="d-ico">📝</div>
+        <div class="d-name">Synthèse de pré-analyse</div>
+        <div class="d-fmt">PDF · NEP 230</div>
+      </div>
+      <div class="del-card" data-d="450">
+        <div class="d-ico">🕐</div>
+        <div class="d-name">Journal de traçabilité</div>
+        <div class="d-fmt">PDF</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ Stage 5: Tagline ═══ -->
+  <div class="stage" id="s5">
+    <div class="tagline">
+      L'outil éclaire.<br>
+      <span class="hl">Le jugement reste humain.</span>
+    </div>
+    <div class="vals">
+      <div class="val" data-d="200"><span class="vi">🧠</span> Explicable</div>
+      <div class="val" data-d="400"><span class="vi">📜</span> Traçable</div>
+      <div class="val" data-d="600"><span class="vi">👤</span> Supervisé</div>
+      <div class="val" data-d="800"><span class="vi">⚖️</span> Éthique</div>
+    </div>
+    <div class="badge" data-d="1000">
+      <div class="ln"></div>
+      <div class="tx">HackAudit 2026</div>
+      <div class="ln"></div>
+    </div>
+  </div>
+
+  <div id="progress">
+    <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+    <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+  </div>
+  <div id="hint">ESPACE pour avancer · R pour revenir</div>
+
+  <script>
+    const IDS = ['s0','s1','s2','s3','s4','s5'];
+    const LOGO_STAGES = new Set([2,3,4]);
+    let cur = -1;
+
+    function go(idx) {
+      if (idx < 0 || idx >= IDS.length) return;
+
+      // Deactivate previous
+      if (cur >= 0) {
+        const prev = document.getElementById(IDS[cur]);
+        prev.classList.remove('active');
+        prev.classList.add('exit');
+        prev.querySelectorAll('[data-d]').forEach(el => el.classList.remove('vis'));
+      }
+
+      // Activate current
+      const el = document.getElementById(IDS[idx]);
+      el.classList.remove('exit');
+      el.classList.add('active');
+
+      // Stagger children
+      el.querySelectorAll('[data-d]').forEach(item => {
+        const d = parseInt(item.dataset.d) || 0;
+        setTimeout(() => item.classList.add('vis'), d + 150);
+      });
+
+      // Persistent logo
+      const logo = document.getElementById('top-logo');
+      if (LOGO_STAGES.has(idx)) {
+        logo.classList.add('visible');
+      } else {
+        logo.classList.remove('visible');
+      }
+
+      // Dots
+      document.querySelectorAll('.dot').forEach((dot, i) => {
+        dot.classList.remove('on', 'done');
+        if (i === idx) dot.classList.add('on');
+        else if (i < idx) dot.classList.add('done');
+      });
+
+      if (idx > 0) document.getElementById('hint').classList.add('off');
+      cur = idx;
+    }
+
+    function reset() {
+      IDS.forEach(id => {
+        const el = document.getElementById(id);
+        el.classList.remove('active', 'exit');
+        el.querySelectorAll('[data-d]').forEach(c => c.classList.remove('vis'));
+      });
+      document.getElementById('top-logo').classList.remove('visible');
+      document.querySelectorAll('.dot').forEach(d => d.classList.remove('on', 'done'));
+      document.getElementById('hint').classList.remove('off');
+      cur = -1;
+    }
+
+    document.addEventListener('keydown', e => {
+      if (e.key === ' ' || e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === 'PageDown') {
+        e.preventDefault();
+        if (cur < IDS.length - 1) go(cur + 1);
+      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'PageUp') {
+        e.preventDefault();
+        if (cur > 0) {
+          const target = cur - 1;
+          reset();
+          setTimeout(() => go(target), 50);
+        }
+      } else if (e.key === 'r' || e.key === 'R') {
+        e.preventDefault();
+        reset();
+        setTimeout(() => go(0), 100);
+      }
+    });
+
+    setTimeout(() => go(0), 500);
+  </script>
+</body>
+</html>

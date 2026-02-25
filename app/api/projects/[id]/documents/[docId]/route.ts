@@ -9,7 +9,7 @@ import {
 import type { DocumentType } from '@/types/database'
 
 const VALID_DOC_TYPES: DocumentType[] = [
-  'fec', 'facture_vente', 'facture_achat', 'bon_livraison',
+  'fec', 'facture_vente', 'facture_achat', 'bon_livraison', 'bon_commande',
   'contrat', 'annexe', 'bilan', 'compte_resultat', 'autre',
 ]
 

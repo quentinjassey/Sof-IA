@@ -30,9 +30,10 @@ export interface LibraryDocument {
 
 const DOC_TYPE_LABELS: Record<DocumentType, string> = {
   fec: 'FEC',
-  facture_vente: 'Factures de vente',
+  facture_vente: 'Factures de vente et avoirs',
   facture_achat: 'Factures fournisseurs',
   bon_livraison: 'Bons de livraison',
+  bon_commande: 'Bons de commande',
   contrat: 'Contrats',
   annexe: 'Annexes',
   bilan: 'Bilans',
@@ -57,6 +58,7 @@ const DOC_TYPE_ORDER: DocumentType[] = [
   'facture_vente',
   'facture_achat',
   'bon_livraison',
+  'bon_commande',
   'contrat',
   'bilan',
   'compte_resultat',
@@ -326,7 +328,7 @@ export default function DocumentLibrary({
 
                           {!selectionMode && (
                             <div className="ml-auto flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
-                              {onPreview && doc.filename.toLowerCase().endsWith('.pdf') && (
+                              {onPreview && (doc.filename.toLowerCase().endsWith('.pdf') || doc.type === 'fec') && (
                                 <button
                                   onClick={(e) => { e.stopPropagation(); onPreview(doc) }}
                                   className="rounded p-0.5 hover:bg-accent"

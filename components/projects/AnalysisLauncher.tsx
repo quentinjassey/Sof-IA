@@ -19,16 +19,17 @@ const SCENARIO_REQUIRED_TYPES: Record<ScenarioType, DocumentType[]> = {
 }
 
 const SCENARIO_OPTIONAL_TYPES: Record<ScenarioType, DocumentType[]> = {
-  sondage_ca: ['contrat'],
+  sondage_ca: ['bon_commande', 'contrat'],
   cutoff: ['contrat'],
   pointage: [],
 }
 
 const DOC_TYPE_LABELS: Record<DocumentType, string> = {
   fec: 'FEC',
-  facture_vente: 'Facture de vente',
+  facture_vente: 'Facture de vente / avoir',
   facture_achat: 'Facture fournisseur',
   bon_livraison: 'Bon de livraison',
+  bon_commande: 'Bon de commande',
   contrat: 'Contrat',
   annexe: 'Annexe',
   bilan: 'Bilan',

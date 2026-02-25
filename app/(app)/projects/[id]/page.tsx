@@ -107,7 +107,7 @@ export default function ProjectDetailPage() {
         const analysisJson = await analysisRes.json()
         if (!analysisRes.ok) throw new Error(analysisJson.error || 'Erreur lancement analyse')
 
-        await refreshProject()
+        router.push(`/projects/${projectId}/missions/${mission!.id}/analysis`)
       } catch (err) {
         throw err
       } finally {

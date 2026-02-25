@@ -23,9 +23,10 @@ interface UploadModalProps {
 
 const DOC_TYPE_OPTIONS: { value: DocumentType; label: string }[] = [
   { value: 'fec', label: 'FEC' },
-  { value: 'facture_vente', label: 'Facture de vente' },
+  { value: 'facture_vente', label: 'Facture de vente / avoir' },
   { value: 'facture_achat', label: 'Facture fournisseur' },
   { value: 'bon_livraison', label: 'Bon de livraison' },
+  { value: 'bon_commande', label: 'Bon de commande' },
   { value: 'contrat', label: 'Contrat' },
   { value: 'bilan', label: 'Bilan' },
   { value: 'compte_resultat', label: 'Compte de résultat' },
@@ -44,6 +45,7 @@ function autoDetectType(filename: string): string {
   if (lower.includes('fa-') || lower.includes('fa_') || lower.includes('facture') || lower.includes('fac-')) return 'facture_vente'
   if (lower.includes('bl-') || lower.includes('bl_') || lower.includes('livraison')) return 'bon_livraison'
   if (lower.includes('br-') || lower.includes('br_') || lower.includes('reception')) return 'bon_livraison'
+  if (lower.includes('bc-') || lower.includes('bc_') || lower.includes('commande')) return 'bon_commande'
   if (lower.includes('av-') || lower.includes('avoir')) return 'facture_vente'
   if (lower.includes('bilan')) return 'bilan'
   if (lower.includes('resultat') || lower.includes('cr-')) return 'compte_resultat'

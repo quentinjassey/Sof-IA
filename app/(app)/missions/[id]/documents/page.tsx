@@ -22,6 +22,10 @@ const PdfPreviewModal = dynamic(
   () => import('@/components/ui/PdfPreviewModal').then((m) => m.PdfPreviewModal),
   { ssr: false }
 )
+const FecPreviewModal = dynamic(
+  () => import('@/components/ui/FecPreviewModal').then((m) => m.FecPreviewModal),
+  { ssr: false }
+)
 import DropZone, { type StagedFile } from '@/components/documents/DropZone'
 import { UploadProgress, type FileProgress } from '@/components/documents/UploadProgress'
 import { DocumentList } from '@/components/documents/DocumentList'
@@ -90,6 +94,19 @@ function statusBadge(status: string) {
         </span>
       )
   }
+}
+
+const documentTypeLabels: Record<string, string> = {
+  fec: 'FEC',
+  facture_vente: 'Facture de vente / avoir',
+  facture_achat: 'Facture fournisseur',
+  bon_livraison: 'Bon de livraison',
+  bon_commande: 'Bon de commande',
+  contrat: 'Contrat',
+  annexe: 'Annexe',
+  bilan: 'Bilan',
+  compte_resultat: 'Compte de résultat',
+  autre: 'Autre',
 }
 
 // --- Component ---
@@ -557,8 +574,16 @@ export default function DocumentsPage({
         </div>
       </div>
 
-      {/* PDF Preview Modal */}
-      {previewDoc && (
+      {/* Document Preview Modals */}
+      {previewDoc && previewDoc.type === 'fec' && (
+        <FecPreviewModal
+          isOpen={!!previewDoc}
+          onClose={() => setPreviewDoc(null)}
+          title={previewDoc.filename}
+          previewUrl={`/api/missions/${missionId}/documents/${previewDoc.id}/preview`}
+        />
+      )}
+      {previewDoc && previewDoc.type !== 'fec' && (
         <PdfPreviewModal
           isOpen={!!previewDoc}
           onClose={() => setPreviewDoc(null)}

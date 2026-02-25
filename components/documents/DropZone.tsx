@@ -24,9 +24,10 @@ interface DropZoneProps {
 
 const documentTypeLabels: Record<string, string> = {
   fec: 'FEC',
-  facture_vente: 'Facture de vente',
+  facture_vente: 'Facture de vente / avoir',
   facture_achat: 'Facture fournisseur',
   bon_livraison: 'Bon de livraison',
+  bon_commande: 'Bon de commande',
   contrat: 'Contrat',
   annexe: 'Annexe',
   bilan: 'Bilan',
@@ -44,7 +45,8 @@ function autoDetectType(filename: string): string {
   if (lower.includes('frn-')) return 'facture_achat'
   if (lower.includes('bl-') || lower.includes('livraison')) return 'bon_livraison'
   if (lower.includes('br-') || lower.includes('reception')) return 'bon_livraison'
-  if (lower.includes('av-')) return 'facture_vente'
+  if (lower.includes('bc-') || lower.includes('commande')) return 'bon_commande'
+  if (lower.includes('av-') || lower.includes('avoir')) return 'facture_vente'
   if (lower.includes('bilan')) return 'bilan'
   if (lower.includes('resultat') || lower.includes('cr-')) return 'compte_resultat'
   if (lower.includes('annexe')) return 'annexe'

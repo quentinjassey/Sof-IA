@@ -14,6 +14,10 @@ const PdfPreviewModal = dynamic(
   () => import('@/components/ui/PdfPreviewModal').then((m) => m.PdfPreviewModal),
   { ssr: false }
 )
+const FecPreviewModal = dynamic(
+  () => import('@/components/ui/FecPreviewModal').then((m) => m.FecPreviewModal),
+  { ssr: false }
+)
 
 interface ProjectContextValue {
   projectId: string
@@ -201,8 +205,8 @@ export default function ProjectLayout({ children }: { children: React.ReactNode 
             sidebarOpen ? 'w-64' : 'w-0 overflow-hidden border-r-0'
           )}
         >
-          <div className="w-64">
-            <div className="flex items-center justify-between border-b border-border px-3 py-2.5">
+          <div className="flex h-full w-64 flex-col">
+            <div className="flex shrink-0 items-center justify-between border-b border-border px-3 py-2.5">
               <div className="min-w-0 flex-1">
                 <h2 className="truncate text-xs font-semibold text-foreground">{projectName || 'Projet'}</h2>
                 <p className="text-[10px] text-muted-foreground">
@@ -217,7 +221,7 @@ export default function ProjectLayout({ children }: { children: React.ReactNode 
                 <PanelLeftClose className="h-3.5 w-3.5" />
               </button>
             </div>
-            <div className="flex-1 overflow-hidden">
+            <div className="min-h-0 flex-1">
               <DocumentLibrary
                 documents={documents}
                 onPreview={setPreviewDoc}
@@ -249,8 +253,16 @@ export default function ProjectLayout({ children }: { children: React.ReactNode 
         </div>
       </div>
 
-      {/* PDF Preview modal */}
-      {previewDoc && (
+      {/* Document Preview modals */}
+      {previewDoc && previewDoc.type === 'fec' && (
+        <FecPreviewModal
+          isOpen={!!previewDoc}
+          onClose={() => setPreviewDoc(null)}
+          title={previewDoc.filename}
+          previewUrl={`/api/projects/${projectId}/documents/${previewDoc.id}/preview`}
+        />
+      )}
+      {previewDoc && previewDoc.type !== 'fec' && (
         <PdfPreviewModal
           isOpen={!!previewDoc}
           onClose={() => setPreviewDoc(null)}

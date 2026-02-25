@@ -50,9 +50,5 @@ Thumbs.db
 env.local
 .mcp.json
 
-# video (Remotion)
-/video/
-
-# pitch presentation
-/pitch/
-/pitch-assets/
+# Assets
+video/

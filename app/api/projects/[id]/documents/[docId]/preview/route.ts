@@ -2,6 +2,45 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getSessionFromServerCookies } from '@/lib/auth/session'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 
+const FEC_PREVIEW_LIMIT = 100
+
+const FEC_STANDARD_HEADERS = [
+  'JournalCode', 'JournalLib', 'EcritureNum', 'EcritureDate',
+  'CompteNum', 'CompteLib', 'CompAuxNum', 'CompAuxLib',
+  'PieceRef', 'PieceDate', 'EcritureLib', 'Debit', 'Credit',
+  'EcritureLet', 'DateLet', 'ValidDate', 'Montantdevise', 'Idevise',
+]
+
+function isFecFile(filename: string, docType: string): boolean {
+  const ext = filename.split('.').pop()?.toLowerCase()
+  return docType === 'fec' || ext === 'txt' || ext === 'csv' || filename.toLowerCase().includes('fec')
+}
+
+function parseFecPreview(text: string, limit: number) {
+  const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0)
+  if (lines.length === 0) return { headers: [], rows: [], totalLines: 0 }
+
+  // Detect separator: pipe (|), tab (\t), or semicolon (;)
+  // FEC standard per DGFiP is pipe-delimited
+  const separator = lines[0].includes('|') ? '|' : lines[0].includes('\t') ? '\t' : ';'
+  const rawHeaders = lines[0].split(separator).map((h) => h.trim())
+
+  const usesStandardHeaders = rawHeaders.some((h) =>
+    FEC_STANDARD_HEADERS.some((s) => s.toLowerCase() === h.toLowerCase())
+  )
+  const headers = usesStandardHeaders ? rawHeaders : FEC_STANDARD_HEADERS.slice(0, rawHeaders.length)
+
+  const totalLines = lines.length - 1
+  const rows: string[][] = []
+
+  for (let i = 1; i < lines.length && rows.length < limit; i++) {
+    const cols = lines[i].split(separator).map((c) => c.trim())
+    if (cols.length >= 3) rows.push(cols)
+  }
+
+  return { headers, rows, totalLines }
+}
+
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string; docId: string }> }
@@ -63,6 +102,26 @@ export async function GET(
         { error: 'Erreur lors du telechargement du fichier.', code: 'INTERNAL_ERROR' },
         { status: 500 }
       )
+    }
+
+    // FEC files: return parsed JSON preview
+    if (isFecFile(doc.filename || '', doc.type || '')) {
+      const arrayBuffer = await fileData.arrayBuffer()
+      const text = Buffer.from(arrayBuffer).toString('utf-8')
+      const preview = parseFecPreview(text, FEC_PREVIEW_LIMIT)
+
+      return NextResponse.json({
+        data: {
+          filename: doc.filename,
+          headers: preview.headers,
+          rows: preview.rows,
+          totalLines: preview.totalLines,
+          previewLimit: FEC_PREVIEW_LIMIT,
+          truncated: preview.totalLines > FEC_PREVIEW_LIMIT,
+        },
+      }, {
+        headers: { 'Cache-Control': 'private, max-age=300' },
+      })
     }
 
     const ext = doc.filename?.split('.').pop()?.toLowerCase()

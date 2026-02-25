@@ -22,6 +22,7 @@ import type { DeliverableType, TraceInsert } from '@/types/database'
 const VALID_DELIVERABLE_TYPES: DeliverableType[] = [
   'checklist_completude',
   'tableau_signaux',
+  'tableau_rapprochement',
   'synthese_preanalyse',
   'journal_tracabilite',
 ]

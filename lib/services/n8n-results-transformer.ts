@@ -46,6 +46,9 @@ interface N8NItemComplet {
   libelle: string
   montant_fec: number
   date_ecriture: string | null
+  journal_code?: string | null
+  compte_num?: string | null
+  is_avoir?: boolean
   facture_trouvee: boolean
   bl_trouve: boolean
   nb_signaux: number
@@ -61,6 +64,7 @@ interface N8NContexteFec {
   periode_debut: string | null
   periode_fin: string | null
   journaux: Record<string, { count: number; debit: number; credit: number }>
+  sales_journals?: string[]
 }
 
 interface N8NEchantillonnage {
@@ -185,6 +189,17 @@ const SEVERITY_TO_PRIORITY: Record<string, SignalPriority> = {
 }
 
 // -----------------------------------------------------------------------------
+// Helpers
+// -----------------------------------------------------------------------------
+
+function isAvoir(item: N8NItemComplet): boolean {
+  if (item.is_avoir === true) return true
+  if (item.montant_fec < 0) return true
+  const lib = (item.libelle || '').toLowerCase()
+  return lib.includes('avoir') || lib.includes('credit note') || lib.includes('retour')
+}
+
+// -----------------------------------------------------------------------------
 // Transformer
 // -----------------------------------------------------------------------------
 
@@ -192,18 +207,24 @@ export function transformN8NResults(results: N8NResults): TransformResult {
   const { consolidation, synthesis } = results
   const items = consolidation.items_complets || []
 
-  // Transform signals
+  // Transform signals — skip SCA-001 (BL absent) for avoirs since no BL is expected
   const signals: TransformedSignal[] = []
   for (const item of items) {
     if (!item.signaux || item.signaux.length === 0) continue
+    const itemIsAvoir = isAvoir(item)
+    const montantDisplay = Math.abs(item.montant_fec)
 
     for (const signal of item.signaux) {
       const ruleId = signal.rule || 'SCA-000'
+
+      if (ruleId === 'SCA-001' && itemIsAvoir) continue
+
       const signalType = RULE_TO_SIGNAL_TYPE[ruleId] || 'incompletude'
       const priority = SEVERITY_TO_PRIORITY[signal.severity] || 'medium'
 
       const sourceDocParts: string[] = []
-      if (item.facture_trouvee) sourceDocParts.push(`Facture ${item.piece_ref}`)
+      const docLabel = itemIsAvoir ? 'Avoir' : 'Facture'
+      if (item.facture_trouvee) sourceDocParts.push(`${docLabel} ${item.piece_ref}`)
       if (item.bl_trouve) sourceDocParts.push(`BL ${item.piece_ref}`)
       sourceDocParts.push(`FEC (piece_ref: ${item.piece_ref})`)
 
@@ -212,13 +233,16 @@ export function transformN8NResults(results: N8NResults): TransformResult {
         compared_documents: sourceDocParts,
         rule_source: ruleId,
         factual_observation: signal.message,
-        montant_fec: item.montant_fec,
+        montant_fec: montantDisplay,
+        montant_fec_signe: item.montant_fec,
+        is_avoir: itemIsAvoir,
         date_ecriture: item.date_ecriture,
       }
 
       if (item.facture) {
         explicability.facture = {
-          montant_ttc: item.facture.montant_ttc,
+          montant_ttc: item.facture.montant_ttc != null ? Math.abs(item.facture.montant_ttc) : null,
+          montant_ttc_signe: item.facture.montant_ttc,
           date: item.facture.date_document,
           emetteur: item.facture.emetteur?.nom,
         }
@@ -235,9 +259,10 @@ export function transformN8NResults(results: N8NResults): TransformResult {
         confidenceScore = Math.round(item.facture.confidence * 100)
       }
 
+      const typeLabel = itemIsAvoir ? 'avoir' : 'facture'
       signals.push({
         type: signalType,
-        description: `${signal.message} — Piece ${item.piece_ref} (${item.libelle}), montant FEC: ${item.montant_fec.toFixed(2)} EUR`,
+        description: `${signal.message} — Piece ${item.piece_ref} (${item.libelle}, ${typeLabel}), montant: ${montantDisplay.toFixed(2)} EUR`,
         source_document: sourceDocParts[0] || null,
         source_page: 1,
         source_extract: signal.message,
@@ -250,25 +275,39 @@ export function transformN8NResults(results: N8NResults): TransformResult {
     }
   }
 
-  // Transform ecritures (sampled entries from FEC)
-  const ecritures: TransformedEcriture[] = items.map((item) => ({
-    journal_code: 'VT',
-    ecriture_date: item.date_ecriture,
-    compte_num: '411000',
-    piece_ref: item.piece_ref,
-    ecriture_lib: item.libelle,
-    debit: item.montant_fec,
-    credit: 0,
-  }))
+  // Transform ecritures — use actual journal_code/compte_num from N8N data,
+  // and correctly assign debit/credit based on sign
+  const ecritures: TransformedEcriture[] = items.map((item) => {
+    const absAmount = Math.abs(item.montant_fec)
+    return {
+      journal_code: item.journal_code || '',
+      ecriture_date: item.date_ecriture,
+      compte_num: item.compte_num || '',
+      piece_ref: item.piece_ref,
+      ecriture_lib: item.libelle,
+      debit: item.montant_fec >= 0 ? absAmount : 0,
+      credit: item.montant_fec < 0 ? absAmount : 0,
+    }
+  })
 
-  // Transform rapprochements
+  // Transform rapprochements — avoirs don't require BL
   const rapprochements: TransformedRapprochement[] = items.map((item) => {
+    const itemIsAvoir = isAvoir(item)
     let matchType: 'exact' | 'partial' | 'missing' = 'exact'
     let confidence: 'high' | 'medium' | 'low' = 'high'
 
     if (!item.facture_trouvee && !item.bl_trouve) {
       matchType = 'missing'
       confidence = 'low'
+    } else if (itemIsAvoir) {
+      // Avoirs: only invoice matching required, no BL expected
+      if (!item.facture_trouvee) {
+        matchType = 'missing'
+        confidence = 'low'
+      } else if (item.nb_signaux > 0) {
+        matchType = 'partial'
+        confidence = 'medium'
+      }
     } else if (!item.bl_trouve || !item.facture_trouvee) {
       matchType = 'partial'
       confidence = 'medium'
@@ -283,8 +322,11 @@ export function transformN8NResults(results: N8NResults): TransformResult {
       match_details: {
         facture_trouvee: item.facture_trouvee,
         bl_trouve: item.bl_trouve,
-        montant_fec: item.montant_fec,
-        montant_facture_ttc: item.facture?.montant_ttc ?? null,
+        is_avoir: itemIsAvoir,
+        bl_requis: !itemIsAvoir,
+        montant_fec: Math.abs(item.montant_fec),
+        montant_fec_signe: item.montant_fec,
+        montant_facture_ttc: item.facture?.montant_ttc != null ? Math.abs(item.facture.montant_ttc) : null,
         date_ecriture: item.date_ecriture,
         date_facture: item.facture?.date_document ?? null,
         date_livraison: item.bl?.date_livraison ?? null,
@@ -315,6 +357,8 @@ function buildCompleteness(
   items: N8NItemComplet[]
 ): TransformedCompleteness[] {
   const result: TransformedCompleteness[] = []
+  const avoirs = items.filter((i) => isAvoir(i))
+  const factures = items.filter((i) => !isAvoir(i))
 
   // FEC
   result.push({
@@ -326,27 +370,32 @@ function buildCompleteness(
     note: `${consolidation.contexte_fec?.total_lignes || 0} lignes, CA total: ${(consolidation.contexte_fec?.ca_total || 0).toLocaleString('fr-FR')} EUR`,
   })
 
-  // Factures
+  // Factures de vente et avoirs
   const facturesPresentes = items.filter((i) => i.facture_trouvee).length
   const facturesAttendues = items.length
+  const avoirCount = avoirs.length
+  const labelSuffix = avoirCount > 0 ? ` (dont ${avoirCount} avoir${avoirCount > 1 ? 's' : ''})` : ''
   result.push({
     doc_type: 'facture_vente',
-    label: 'Factures de vente',
+    label: `Factures de vente et avoirs clients${labelSuffix}`,
     required: true,
     status: facturesPresentes === facturesAttendues ? 'present' : facturesPresentes > 0 ? 'incomplete' : 'missing',
     count: facturesPresentes,
-    note: `${facturesPresentes}/${facturesAttendues} factures retrouvees dans l'echantillon`,
+    note: `${facturesPresentes}/${facturesAttendues} documents retrouves dans l'echantillon`,
   })
 
-  // Bons de livraison
-  const blPresents = items.filter((i) => i.bl_trouve).length
+  // Bons de livraison — only expected for non-avoir items
+  const blAttendus = factures.length
+  const blPresents = factures.filter((i) => i.bl_trouve).length
   result.push({
     doc_type: 'bon_livraison',
     label: 'Bons de livraison',
     required: true,
-    status: blPresents === facturesAttendues ? 'present' : blPresents > 0 ? 'incomplete' : 'missing',
+    status: blAttendus === 0 ? 'present' : blPresents === blAttendus ? 'present' : blPresents > 0 ? 'incomplete' : 'missing',
     count: blPresents,
-    note: `${blPresents}/${facturesAttendues} BL retrouves dans l'echantillon`,
+    note: blAttendus > 0
+      ? `${blPresents}/${blAttendus} BL retrouves (hors avoirs — non requis pour les avoirs)`
+      : 'Aucun BL attendu (echantillon compose uniquement d\'avoirs)',
   })
 
   return result

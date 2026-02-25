@@ -106,12 +106,12 @@ export const signalRules: SignalRule[] = [
     type: 'absence_piece',
     label: 'Bon de livraison absent pour une vente',
     description:
-      'Facture de vente presente dans l\'echantillon sans bon de livraison associe. L\'absence de preuve de livraison ne permet pas de confirmer la realite de l\'operation.',
+      'Facture de vente presente dans l\'echantillon sans bon de livraison associe. L\'absence de preuve de livraison ne permet pas de confirmer la realite de l\'operation. Ne s\'applique pas aux avoirs clients (notes de credit), pour lesquels aucun bon de livraison n\'est attendu.',
     scenario: ['sondage_ca'],
     priority: 'high',
     nep_reference: 'NEP 500',
     checks:
-      'Pour chaque facture de vente, recherche d\'un bon de livraison dont la reference, le client et la description correspondent. Si aucun BL n\'est trouve, un signal est genere.',
+      'Pour chaque facture de vente (hors avoirs), recherche d\'un bon de livraison dont la reference, le client et la description correspondent. Si aucun BL n\'est trouve, un signal est genere. Les avoirs clients sont exclus de cette verification.',
   },
   {
     id: 'SCA-002',
@@ -119,12 +119,12 @@ export const signalRules: SignalRule[] = [
     type: 'incoherence_montant',
     label: 'Ecart de montant entre facture et ecriture FEC',
     description:
-      'Le montant figurant sur la facture de vente ne correspond pas au montant enregistre dans l\'ecriture comptable du FEC. L\'ecart depasse le seuil de tolerance (1 %).',
+      'Le montant figurant sur la facture de vente ou l\'avoir ne correspond pas au montant enregistre dans l\'ecriture comptable du FEC. L\'ecart depasse le seuil de tolerance (1 %). La comparaison est effectuee en valeur absolue pour gerer les avoirs clients (montants negatifs).',
     scenario: ['sondage_ca'],
     priority: 'high',
     nep_reference: 'NEP 500',
     checks:
-      'Comparaison du montant HT de la facture avec le montant (debit ou credit) de l\'ecriture FEC correspondante. Calcul de l\'ecart en pourcentage. Signal si ecart > 1 %.',
+      'Comparaison en valeur absolue du montant de la facture/avoir avec le montant de l\'ecriture FEC correspondante. Calcul de l\'ecart en pourcentage. Signal si ecart > 1 %.',
   },
   {
     id: 'SCA-003',

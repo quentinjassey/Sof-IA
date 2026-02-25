@@ -7,9 +7,10 @@ import type { DocumentType } from '@/types/database'
 
 const DOC_TYPE_OPTIONS: { value: DocumentType; label: string }[] = [
   { value: 'fec', label: 'Fichier des Ecritures Comptables (FEC)' },
-  { value: 'facture_vente', label: 'Facture de vente' },
+  { value: 'facture_vente', label: 'Facture de vente / avoir client' },
   { value: 'facture_achat', label: 'Facture fournisseur' },
   { value: 'bon_livraison', label: 'Bon de livraison / reception' },
+  { value: 'bon_commande', label: 'Bon de commande client' },
   { value: 'contrat', label: 'Contrat' },
   { value: 'bilan', label: 'Bilan' },
   { value: 'compte_resultat', label: 'Compte de resultat' },

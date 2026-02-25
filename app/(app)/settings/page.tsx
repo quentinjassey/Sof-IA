@@ -3,41 +3,50 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import {
-  Settings,
   User,
   KeyRound,
   Save,
   LogOut,
-  Loader2,
-  AlertCircle,
-  CheckCircle,
-  Building2,
-  Hash,
-  Mail,
+  Shield,
+  CalendarDays,
+  Clock,
+  Briefcase,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useSession } from '@/hooks/useSession'
 import { apiFetch, ApiError } from '@/lib/utils/api'
 import { maskLicenseKey, formatDate } from '@/lib/utils/format'
+import { Card, CardHeader, CardContent, CardFooter, CardTitle, CardDescription } from '@/components/ui/Card'
+import { Input } from '@/components/ui/Input'
+import { Button } from '@/components/ui/Button'
+import { Badge } from '@/components/ui/Badge'
+import { Separator } from '@/components/ui/Separator'
+import { Alert } from '@/components/ui/Alert'
 import type { Profile } from '@/types/database'
+
+type SettingsSection = 'profile' | 'license'
+
+const NAV_ITEMS: { key: SettingsSection; label: string; icon: React.ElementType }[] = [
+  { key: 'profile', label: 'Profil CAC', icon: User },
+  { key: 'license', label: 'Licence', icon: KeyRound },
+]
 
 export default function SettingsPage() {
   const router = useRouter()
   const { profile, licenseInfo, isLoading, error: sessionError, logout } = useSession()
 
-  // Profile form state
+  const [section, setSection] = useState<SettingsSection>('profile')
+
   const [name, setName] = useState('')
   const [cabinet, setCabinet] = useState('')
   const [inscriptionCncc, setInscriptionCncc] = useState('')
   const [email, setEmail] = useState('')
 
-  // UI state
   const [isSaving, setIsSaving] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [saveSuccess, setSaveSuccess] = useState(false)
 
-  // Populate form when profile loads
   useEffect(() => {
     if (profile) {
       setName(profile.name || '')
@@ -47,7 +56,6 @@ export default function SettingsPage() {
     }
   }, [profile])
 
-  // Clear success message after 3 seconds
   useEffect(() => {
     if (saveSuccess) {
       const timer = setTimeout(() => setSaveSuccess(false), 3000)
@@ -79,15 +87,9 @@ export default function SettingsPage() {
       }
 
       if (profile) {
-        await apiFetch<Profile>('/api/profile', {
-          method: 'PUT',
-          body: profileData,
-        })
+        await apiFetch<Profile>('/api/profile', { method: 'PUT', body: profileData })
       } else {
-        await apiFetch<Profile>('/api/profile', {
-          method: 'POST',
-          body: profileData,
-        })
+        await apiFetch<Profile>('/api/profile', { method: 'POST', body: profileData })
       }
 
       setSaveSuccess(true)
@@ -114,320 +116,285 @@ export default function SettingsPage() {
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-primary" />
-        <span className="mt-3 text-sm text-muted-foreground">Chargement des paramètres...</span>
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        <span className="mt-3 text-sm text-muted-foreground">Chargement...</span>
       </div>
     )
   }
 
-  const PROFILE_FIELDS = [
-    {
-      id: 'name',
-      label: 'Nom complet',
-      required: true,
-      icon: User,
-      type: 'text',
-      placeholder: 'Jean Dupont',
-      value: name,
-      onChange: setName,
-    },
-    {
-      id: 'cabinet',
-      label: 'Cabinet',
-      required: true,
-      icon: Building2,
-      type: 'text',
-      placeholder: 'Cabinet Dupont & Associés',
-      value: cabinet,
-      onChange: setCabinet,
-    },
-    {
-      id: 'inscription_cncc',
-      label: "Numéro d'inscription CNCC",
-      required: false,
-      icon: Hash,
-      type: 'text',
-      placeholder: 'CNCC-12345',
-      value: inscriptionCncc,
-      onChange: setInscriptionCncc,
-    },
-    {
-      id: 'email',
-      label: 'Adresse email',
-      required: false,
-      icon: Mail,
-      type: 'email',
-      placeholder: 'jean.dupont@cabinet.fr',
-      value: email,
-      onChange: setEmail,
-    },
-  ]
+  const initials = name
+    ? name.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2)
+    : 'CA'
 
   return (
-    <div className="animate-fade-in mx-auto h-full max-w-2xl space-y-8 overflow-y-auto p-5 sm:p-6 lg:p-8">
-      {/* Page heading */}
-      <div>
-        <h1 className="font-serif text-2xl tracking-tight text-foreground">
-          Paramètres
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Gérez votre profil professionnel et votre licence
-        </p>
-      </div>
-
-      {/* Session error */}
-      {sessionError && (
-        <div className="flex items-start gap-2.5 rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3">
-          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
-          <p className="text-sm text-destructive">{sessionError}</p>
-        </div>
-      )}
-
-      {/* Profile section */}
-      <section className="rounded-2xl border border-border bg-card shadow-sm">
-        <div className="border-b border-border px-6 py-4">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-              <User className="h-4 w-4 text-primary" />
-            </div>
-            <div>
-              <h2 className="font-serif text-base text-card-foreground">
-                Profil du commissaire aux comptes
-              </h2>
-              <p className="text-xs text-muted-foreground">
-                Ces informations apparaissent sur les livrables et le journal de traçabilité.
-              </p>
-            </div>
-          </div>
+    <div className="animate-fade-in h-full overflow-y-auto p-5 sm:p-6 lg:p-8">
+      <div className="mx-auto max-w-4xl space-y-6">
+        {/* Page heading */}
+        <div>
+          <h1 className="font-serif text-2xl tracking-tight text-foreground">Param&egrave;tres</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            G&eacute;rez votre profil professionnel et votre licence Sof&apos;IA.
+          </p>
         </div>
 
-        <div className="space-y-5 px-6 py-5">
-          {PROFILE_FIELDS.map((field) => {
-            const Icon = field.icon
-            return (
-              <div key={field.id}>
-                <label
-                  htmlFor={field.id}
-                  className="mb-2 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground"
-                >
-                  {field.label}
-                  {field.required && (
-                    <span className="text-destructive">*</span>
-                  )}
-                </label>
-                <div className="relative">
-                  <Icon className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/40" />
-                  <input
-                    id={field.id}
-                    type={field.type}
-                    value={field.value}
-                    onChange={(e) => field.onChange(e.target.value)}
-                    placeholder={field.placeholder}
+        <Separator />
+
+        {sessionError && <Alert variant="error">{sessionError}</Alert>}
+
+        {/* Settings layout: side nav + content */}
+        <div className="flex flex-col gap-8 lg:flex-row lg:gap-12">
+          {/* Side navigation */}
+          <aside className="-mx-1 lg:w-48 lg:shrink-0">
+            <nav className="flex gap-1 lg:flex-col">
+              {NAV_ITEMS.map((item) => {
+                const Icon = item.icon
+                const isActive = section === item.key
+                return (
+                  <button
+                    key={item.key}
+                    onClick={() => setSection(item.key)}
                     className={cn(
-                      "block w-full rounded-xl border border-input bg-background py-3 pl-10 pr-4 text-sm text-foreground",
-                      "placeholder:text-muted-foreground/50",
-                      "transition-all focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                      'flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                      isActive
+                        ? 'bg-muted text-foreground'
+                        : 'text-muted-foreground hover:bg-transparent hover:text-foreground hover:underline'
                     )}
-                  />
-                </div>
-              </div>
-            )
-          })}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {item.label}
+                  </button>
+                )
+              })}
+            </nav>
 
-          {/* Save error */}
-          {saveError && (
-            <div className="flex items-start gap-2.5 rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3">
-              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
-              <p className="text-sm text-destructive">{saveError}</p>
-            </div>
-          )}
-
-          {/* Save success */}
-          {saveSuccess && (
-            <div className="flex items-center gap-2.5 rounded-xl border border-success/20 bg-success/5 px-4 py-3">
-              <CheckCircle className="h-4 w-4 shrink-0 text-success" />
-              <p className="text-sm text-success">
-                Profil enregistré avec succès.
-              </p>
-            </div>
-          )}
-
-          {/* Save button */}
-          <div className="flex justify-end">
-            <button
-              onClick={handleSaveProfile}
-              disabled={isSaving}
-              className={cn(
-                "group flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-medium transition-all",
-                "bg-primary text-primary-foreground shadow-sm shadow-primary/20",
-                "hover:shadow-md hover:shadow-primary/25 hover:brightness-110",
-                "disabled:pointer-events-none disabled:opacity-50"
-              )}
-            >
-              {isSaving ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Save className="h-4 w-4" />
-              )}
-              {isSaving ? 'Enregistrement...' : 'Enregistrer'}
-            </button>
-          </div>
-        </div>
-      </section>
-
-      {/* License section */}
-      <section className="rounded-2xl border border-border bg-card shadow-sm">
-        <div className="border-b border-border px-6 py-4">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-              <KeyRound className="h-4 w-4 text-primary" />
-            </div>
-            <div>
-              <h2 className="font-serif text-base text-card-foreground">Licence</h2>
-              <p className="text-xs text-muted-foreground">
-                Informations sur votre licence Sof&apos;IA active.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="px-6 py-5">
-          {licenseInfo ? (
-            <div className="space-y-3.5">
-              {/* License key (masked) */}
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                  Clé de licence
-                </span>
-                <span className="font-mono text-sm text-foreground">
-                  {maskLicenseKey(licenseInfo.license_key)}
-                </span>
-              </div>
-
-              <div className="h-px bg-border/60" />
-
-              {/* Status */}
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Statut</span>
-                <span
-                  className={cn(
-                    "inline-flex items-center rounded-md px-2.5 py-0.5 text-[11px] font-medium",
-                    licenseInfo.valid
-                      ? 'bg-success/10 text-success'
-                      : 'bg-destructive/10 text-destructive'
-                  )}
-                >
-                  {licenseInfo.valid ? 'Active' : 'Inactive'}
-                </span>
-              </div>
-
-              {/* Activation date */}
-              {licenseInfo.activated_at && (
-                <>
-                  <div className="h-px bg-border/60" />
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                      Activée le
-                    </span>
-                    <span className="text-sm text-foreground">
-                      {formatDate(licenseInfo.activated_at)}
-                    </span>
-                  </div>
-                </>
-              )}
-
-              {/* Validity date */}
-              {licenseInfo.valid_until && (
-                <>
-                  <div className="h-px bg-border/60" />
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                      Valide jusqu&apos;au
-                    </span>
-                    <span className="text-sm text-foreground">
-                      {formatDate(licenseInfo.valid_until)}
-                    </span>
-                  </div>
-                </>
-              )}
-
-              {/* Days remaining */}
-              {licenseInfo.days_remaining >= 0 && (
-                <>
-                  <div className="h-px bg-border/60" />
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                      Jours restants
-                    </span>
-                    <span
-                      className={cn(
-                        "text-sm font-medium",
-                        licenseInfo.days_remaining <= 7
-                          ? 'text-destructive'
-                          : licenseInfo.days_remaining <= 30
-                            ? 'text-warning-foreground'
-                            : 'text-foreground'
-                      )}
-                    >
-                      {licenseInfo.days_remaining} jour
-                      {licenseInfo.days_remaining > 1 ? 's' : ''}
-                    </span>
-                  </div>
-                </>
-              )}
-
-              {/* Max missions */}
-              {licenseInfo.max_missions > 0 && (
-                <>
-                  <div className="h-px bg-border/60" />
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                      Missions autorisées
-                    </span>
-                    <span className="text-sm text-foreground">
-                      {licenseInfo.max_missions}
-                    </span>
-                  </div>
-                </>
-              )}
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              Aucune information de licence disponible.
-            </p>
-          )}
-        </div>
-      </section>
-
-      {/* Logout section */}
-      <section className="rounded-2xl border border-border bg-card shadow-sm">
-        <div className="px-6 py-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-sm font-medium text-card-foreground">Déconnexion</h3>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Se déconnecter et retourner à la page d&apos;activation de licence.
-              </p>
-            </div>
+            {/* Logout at bottom of nav */}
+            <Separator className="my-3" />
             <button
               onClick={handleLogout}
               disabled={isLoggingOut}
-              className={cn(
-                "flex items-center gap-2 rounded-xl border border-destructive/30 bg-card px-4 py-2.5 text-sm font-medium text-destructive transition-all",
-                "hover:bg-destructive/5",
-                "disabled:pointer-events-none disabled:opacity-50"
-              )}
+              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-destructive transition-colors hover:bg-destructive/5 disabled:opacity-50"
             >
-              {isLoggingOut ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <LogOut className="h-4 w-4" />
-              )}
-              {isLoggingOut ? 'Déconnexion...' : 'Se déconnecter'}
+              <LogOut className="h-4 w-4" />
+              {isLoggingOut ? 'D\u00e9connexion...' : 'Se d\u00e9connecter'}
             </button>
+          </aside>
+
+          {/* Content area */}
+          <div className="flex-1 space-y-6 lg:max-w-2xl">
+            {section === 'profile' && (
+              <>
+                {/* Profile identity card */}
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center gap-4">
+                      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-base font-semibold text-primary">
+                        {initials}
+                      </div>
+                      <div>
+                        <CardTitle className="font-serif text-lg">{name || 'Nouveau profil'}</CardTitle>
+                        <CardDescription>
+                          {cabinet || 'Cabinet non renseign\u00e9'}
+                          {inscriptionCncc ? ` \u2022 ${inscriptionCncc}` : ''}
+                        </CardDescription>
+                      </div>
+                    </div>
+                  </CardHeader>
+                </Card>
+
+                {/* Profile form */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Informations professionnelles</CardTitle>
+                    <CardDescription>
+                      Ces informations apparaissent sur les livrables et le journal de tra&ccedil;abilit&eacute;.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <Input
+                        label="Nom complet"
+                        required
+                        id="name"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder="Jean Dupont"
+                      />
+                      <Input
+                        label="Cabinet"
+                        required
+                        id="cabinet"
+                        value={cabinet}
+                        onChange={(e) => setCabinet(e.target.value)}
+                        placeholder="Cabinet Dupont & Associ\u00e9s"
+                      />
+                    </div>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <Input
+                        label="N\u00b0 inscription CNCC"
+                        id="inscription_cncc"
+                        value={inscriptionCncc}
+                        onChange={(e) => setInscriptionCncc(e.target.value)}
+                        placeholder="CNCC-12345"
+                        helperText="Optionnel"
+                      />
+                      <Input
+                        label="Adresse email"
+                        id="email"
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="jean.dupont@cabinet.fr"
+                        helperText="Optionnel"
+                      />
+                    </div>
+                  </CardContent>
+                  <CardFooter className="justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      {saveError && (
+                        <Alert variant="error" className="py-2 text-xs">{saveError}</Alert>
+                      )}
+                      {saveSuccess && (
+                        <Alert variant="success" className="py-2 text-xs">Profil enregistr&eacute;.</Alert>
+                      )}
+                    </div>
+                    <Button
+                      onClick={handleSaveProfile}
+                      loading={isSaving}
+                      iconLeft={<Save className="h-4 w-4" />}
+                    >
+                      Enregistrer
+                    </Button>
+                  </CardFooter>
+                </Card>
+              </>
+            )}
+
+            {section === 'license' && (
+              <>
+                {/* License status card */}
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle>Licence Sof&apos;IA</CardTitle>
+                        <CardDescription>
+                          D&eacute;tails de votre licence active.
+                        </CardDescription>
+                      </div>
+                      {licenseInfo && (
+                        <Badge variant={licenseInfo.valid ? 'validated' : 'rejected'}>
+                          {licenseInfo.valid ? 'Active' : 'Inactive'}
+                        </Badge>
+                      )}
+                    </div>
+                  </CardHeader>
+                  <CardContent className="py-0">
+                    {licenseInfo ? (
+                      <div className="divide-y divide-border">
+                        <LicenseRow
+                          icon={<KeyRound className="h-4 w-4" />}
+                          label="Cl\u00e9 de licence"
+                          value={
+                            <span className="font-mono text-xs tracking-wider">
+                              {maskLicenseKey(licenseInfo.license_key)}
+                            </span>
+                          }
+                        />
+                        {licenseInfo.activated_at && (
+                          <LicenseRow
+                            icon={<CalendarDays className="h-4 w-4" />}
+                            label="Activ\u00e9e le"
+                            value={formatDate(licenseInfo.activated_at)}
+                          />
+                        )}
+                        {licenseInfo.valid_until && (
+                          <LicenseRow
+                            icon={<Clock className="h-4 w-4" />}
+                            label="Valide jusqu&apos;au"
+                            value={formatDate(licenseInfo.valid_until)}
+                          />
+                        )}
+                        {licenseInfo.days_remaining >= 0 && (
+                          <LicenseRow
+                            icon={<Shield className="h-4 w-4" />}
+                            label="Jours restants"
+                            value={
+                              <span
+                                className={cn(
+                                  'font-semibold tabular-nums',
+                                  licenseInfo.days_remaining <= 7
+                                    ? 'text-destructive'
+                                    : licenseInfo.days_remaining <= 30
+                                      ? 'text-warning-foreground'
+                                      : 'text-foreground'
+                                )}
+                              >
+                                {licenseInfo.days_remaining} jour{licenseInfo.days_remaining > 1 ? 's' : ''}
+                              </span>
+                            }
+                          />
+                        )}
+                        {licenseInfo.max_missions > 0 && (
+                          <LicenseRow
+                            icon={<Briefcase className="h-4 w-4" />}
+                            label="Missions autoris\u00e9es"
+                            value={licenseInfo.max_missions}
+                          />
+                        )}
+                      </div>
+                    ) : (
+                      <p className="py-5 text-center text-sm text-muted-foreground">
+                        Aucune information de licence disponible.
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Danger zone */}
+                <Card className="border-destructive/20">
+                  <CardHeader>
+                    <CardTitle className="text-sm text-destructive">Zone sensible</CardTitle>
+                    <CardDescription>
+                      Se d&eacute;connecter et retourner &agrave; la page d&apos;activation.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Button
+                      variant="outline"
+                      onClick={handleLogout}
+                      loading={isLoggingOut}
+                      iconLeft={<LogOut className="h-4 w-4" />}
+                      className="border-destructive/30 text-destructive hover:bg-destructive/5 hover:text-destructive"
+                    >
+                      Se d&eacute;connecter
+                    </Button>
+                  </CardContent>
+                </Card>
+              </>
+            )}
           </div>
         </div>
-      </section>
+      </div>
+    </div>
+  )
+}
+
+function LicenseRow({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode
+  label: string
+  value: React.ReactNode
+}) {
+  return (
+    <div className="flex items-center justify-between py-3.5">
+      <div className="flex items-center gap-2.5 text-muted-foreground">
+        <span className="text-muted-foreground/50">{icon}</span>
+        <span className="text-xs font-medium">{label}</span>
+      </div>
+      <span className="text-sm text-foreground">{value}</span>
     </div>
   )
 }

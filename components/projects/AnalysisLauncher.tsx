@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
-import { X, Play, Loader2, FileText, CheckSquare, Square, AlertCircle } from 'lucide-react'
+import { useState, useMemo, useEffect, useRef } from 'react'
+import { X, Play, Loader2, FileText, CheckSquare, Square, AlertCircle, Info } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { ScenarioType, DocumentType } from '@/types/database'
 import { type LibraryDocument } from './DocumentLibrary'
@@ -78,6 +78,8 @@ export default function AnalysisLauncher({
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [isLaunching, setIsLaunching] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showSondageInfo, setShowSondageInfo] = useState(false)
+  const infoRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (isOpen) {
@@ -166,6 +168,56 @@ export default function AnalysisLauncher({
             Sof&apos;IA a pre-selectionne les documents pertinents pour cette analyse.
             Vous pouvez modifier cette selection avant de lancer.
           </p>
+
+          {scenario === 'sondage_ca' && (
+            <div className="relative mb-3 rounded-lg border border-primary/20 bg-primary/[0.04] px-3 py-2.5">
+              <div className="flex items-start gap-2">
+                <Info className="mt-0.5 h-4 w-4 shrink-0 text-primary/70" />
+                <div className="flex-1 text-xs text-primary/80">
+                  <p className="font-medium">Echantillon pre-defini (POC)</p>
+                  <p className="mt-0.5 text-primary/60">
+                    La pre-analyse porte sur les lignes du FEC pour lesquelles des pieces justificatives sont disponibles.
+                  </p>
+                  <div ref={infoRef} className="relative inline-block">
+                    <button
+                      onClick={() => setShowSondageInfo(!showSondageInfo)}
+                      className="mt-1 inline-flex items-center gap-1 text-[10px] font-medium text-primary/70 underline decoration-dotted underline-offset-2 hover:text-primary transition-colors"
+                    >
+                      En savoir plus
+                    </button>
+                    {showSondageInfo && (
+                      <div className="absolute top-full left-0 z-[60] mt-2 w-80 rounded-xl border border-border bg-card p-4 shadow-lg">
+                        <div className="absolute -top-1.5 left-4 h-3 w-3 rotate-45 border-l border-t border-border bg-card" />
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <h4 className="text-xs font-semibold text-card-foreground">Pourquoi un echantillon pre-defini ?</h4>
+                          <button
+                            onClick={() => setShowSondageInfo(false)}
+                            className="shrink-0 rounded p-0.5 text-muted-foreground hover:bg-muted"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                        <div className="space-y-2 text-[11px] leading-relaxed text-muted-foreground">
+                          <p>
+                            Dans le cadre de ce POC, le sondage n&apos;est <strong className="text-card-foreground">pas un echantillonnage statistique</strong>.
+                            L&apos;analyse est realisee sur un ensemble de lignes du FEC pour lesquelles au moins un document justificatif est fourni.
+                          </p>
+                          <p>
+                            En conditions reelles, le CAC selectionne lui-meme les ecritures a tester selon ses criteres professionnels.
+                            Pour ce POC, les lignes sont pre-definies afin de disposer des pieces justificatives correspondantes (factures, bons de livraison).
+                          </p>
+                          <p>
+                            Utiliser des lignes aleatoires du FEC aurait necessite l&apos;ensemble des pieces justificatives de l&apos;entreprise,
+                            ce qui depasse le perimetre d&apos;une demonstration.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {missingRequired.length > 0 && (
             <div className="mb-3 flex items-start gap-2 rounded-lg bg-warning/10 px-3 py-2.5">

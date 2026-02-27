@@ -8,6 +8,8 @@ import {
   Loader2,
   ChevronLeft,
   ChevronRight,
+  BarChart3,
+  Info,
 } from 'lucide-react'
 import DisclaimerBanner from '@/components/ui/DisclaimerBanner'
 import SignalCard from '@/components/signals/SignalCard'
@@ -18,10 +20,23 @@ import type { Signal, SignalPriority, HumanDecision, SignalType } from '@/types/
 
 // --- Types ---
 
+interface CoverageData {
+  ca_total: number
+  montant_teste_ht: number
+  montant_factures_ht: number
+  montant_avoirs_ht: number
+  couverture_pct: number
+  pieces_testees: number
+  montant_signaux: number
+  taux_erreur_pct: number
+  extrapolation_montant: number
+}
+
 interface SignalStats {
   total: number
   by_priority: Record<SignalPriority, number>
   by_decision: Record<HumanDecision, number>
+  coverage?: CoverageData | null
 }
 
 interface PaginationMeta {
@@ -191,6 +206,78 @@ export default function SignalsPage({
         <Badge variant="rejected">{rejectedCount} rejeté{rejectedCount !== 1 ? 's' : ''}</Badge>
         <Badge variant="to-investigate">{investigateCount} à approfondir</Badge>
       </div>
+
+      {/* Coverage KPI — sondage_ca only */}
+      {stats?.coverage && stats.coverage.ca_total > 0 && (
+        <div className="rounded-xl border border-primary/20 bg-primary/[0.03]">
+          <div className="flex items-center gap-2 border-b border-primary/10 px-5 py-3">
+            <BarChart3 className="h-4 w-4 text-primary" />
+            <h3 className="text-sm font-semibold text-foreground">Couverture du chiffre d&apos;affaires</h3>
+          </div>
+          <div className="grid grid-cols-2 gap-4 px-5 py-4 sm:grid-cols-3 lg:grid-cols-6">
+            <div>
+              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">CA total HT (FEC)</p>
+              <p className="mt-1 text-lg font-bold text-foreground tabular-nums">
+                {stats.coverage.ca_total.toLocaleString('fr-FR', { maximumFractionDigits: 0 })} €
+              </p>
+            </div>
+            <div>
+              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Montant net testé HT</p>
+              <p className="mt-1 text-lg font-bold text-foreground tabular-nums">
+                {stats.coverage.montant_teste_ht.toLocaleString('fr-FR', { maximumFractionDigits: 0 })} €
+              </p>
+              <p className="text-[10px] text-muted-foreground">
+                {stats.coverage.pieces_testees} pièce{stats.coverage.pieces_testees > 1 ? 's' : ''}
+                {stats.coverage.montant_avoirs_ht > 0 && (
+                  <> (dont {stats.coverage.montant_avoirs_ht.toLocaleString('fr-FR', { maximumFractionDigits: 0 })} € d&apos;avoirs)</>
+                )}
+              </p>
+            </div>
+            <div>
+              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Taux de couverture</p>
+              <p className={cn(
+                'mt-1 text-lg font-bold tabular-nums',
+                stats.coverage.couverture_pct >= 50 ? 'text-success' : 'text-warning-foreground'
+              )}>
+                {stats.coverage.couverture_pct}%
+              </p>
+            </div>
+            <div>
+              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Montant avec signaux</p>
+              <p className="mt-1 text-lg font-bold text-foreground tabular-nums">
+                {stats.coverage.montant_signaux.toLocaleString('fr-FR', { maximumFractionDigits: 0 })} €
+              </p>
+            </div>
+            <div>
+              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Taux d&apos;erreur échantillon</p>
+              <p className={cn(
+                'mt-1 text-lg font-bold tabular-nums',
+                stats.coverage.taux_erreur_pct > 5 ? 'text-destructive' : stats.coverage.taux_erreur_pct > 0 ? 'text-warning-foreground' : 'text-success'
+              )}>
+                {stats.coverage.taux_erreur_pct}%
+              </p>
+            </div>
+            <div>
+              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Extrapolation sur le CA</p>
+              <p className={cn(
+                'mt-1 text-lg font-bold tabular-nums',
+                stats.coverage.extrapolation_montant > 0 ? 'text-destructive' : 'text-success'
+              )}>
+                {stats.coverage.extrapolation_montant.toLocaleString('fr-FR', { maximumFractionDigits: 0 })} €
+              </p>
+              <p className="text-[10px] text-muted-foreground">
+                projection sur le CA total
+              </p>
+            </div>
+          </div>
+          <div className="flex items-start gap-2 border-t border-primary/10 px-5 py-2.5">
+            <Info className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground/60" />
+            <p className="text-[10px] text-muted-foreground">
+              Projection mathématique à partir de l&apos;échantillon testé. La qualification (significatif ou non) et la comparaison au seuil de signification relèvent du jugement professionnel du commissaire aux comptes.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3">

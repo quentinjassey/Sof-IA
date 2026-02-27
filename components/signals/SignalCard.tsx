@@ -9,6 +9,7 @@ import {
   FileQuestion,
   ChevronRight,
   ShieldCheck,
+  BookCheck,
 } from 'lucide-react'
 import { Badge } from '@/components/ui/Badge'
 import { cn } from '@/lib/utils'
@@ -68,8 +69,27 @@ interface SignalCardProps {
   onClick?: () => void
 }
 
+function getCutoffFecStatus(signal: Signal): string | null {
+  const rule = signal.rule_triggered
+  if (!rule?.startsWith('CUT-')) return null
+
+  switch (rule) {
+    case 'CUT-001':
+      return 'Facture comptabilisee dans le FEC de l\'exercice clos'
+    case 'CUT-002':
+      return 'Facture comptabilisee dans le FEC de l\'exercice suivant'
+    case 'CUT-004':
+      return 'Operation comptabilisee dans le FEC de l\'exercice clos'
+    case 'CUT-005':
+      return 'Vente initiale comptabilisee dans le FEC de l\'exercice clos'
+    default:
+      return null
+  }
+}
+
 export default function SignalCard({ signal, index, onClick }: SignalCardProps) {
   const TypeIcon = signalTypeIcons[signal.type] || <FileQuestion className="h-4 w-4" />
+  const cutoffFecStatus = getCutoffFecStatus(signal)
 
   return (
     <div
@@ -120,6 +140,12 @@ export default function SignalCard({ signal, index, onClick }: SignalCardProps) 
         <p className="mt-0.5 truncate text-sm text-muted-foreground">
           {signal.description}
         </p>
+        {cutoffFecStatus && (
+          <p className="mt-1 inline-flex items-center gap-1.5 rounded-md bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-700 dark:text-amber-400">
+            <BookCheck className="h-3 w-3" />
+            {cutoffFecStatus}
+          </p>
+        )}
         {signal.source_document && (
           <p className="mt-0.5 text-xs text-muted-foreground/60">
             Source : {signal.source_document}

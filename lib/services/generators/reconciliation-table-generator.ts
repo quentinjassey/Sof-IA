@@ -42,6 +42,7 @@ interface ReconRow {
   montantAbs: number
   isAvoir: boolean
   factureTrouvee: boolean
+  montantFactureHt: number | null
   montantFactureTtc: number | null
   ecartPct: number | null
   blTrouve: boolean
@@ -244,15 +245,17 @@ export async function generateReconciliationTableXlsx(
     coverageSheet.getCell(`B${r}`).font = { size: 10 }
   })
 
-  // Coverage stats
-  const totalTested = rows.reduce((s, r) => s + r.montantAbs, 0)
+  // Coverage stats — use HT amounts for coverage ratio (ca_total is HT from 7xxx accounts)
   const invoiceCount = rows.filter((r) => !r.isAvoir).length
   const avoirCount = rows.filter((r) => r.isAvoir).length
+  const totalFacturesHt = rows.filter((r) => !r.isAvoir).reduce((s, r) => s + getRowHtAmount(r), 0)
+  const totalAvoirsHt = rows.filter((r) => r.isAvoir).reduce((s, r) => s + getRowHtAmount(r), 0)
+  const totalTestedHt = totalFacturesHt - totalAvoirsHt
   const justifiedCount = rows.filter((r) => r.matchType === 'exact').length
   const partialCount = rows.filter((r) => r.matchType === 'partial').length
   const missingCount = rows.filter((r) => r.matchType === 'missing').length
   const coveragePct = caTotal && caTotal > 0
-    ? Math.round(totalTested / caTotal * 10000) / 100
+    ? Math.round(totalTestedHt / caTotal * 10000) / 100
     : null
 
   let statsRow = 9
@@ -272,10 +275,14 @@ export async function generateReconciliationTableXlsx(
   }
 
   addStat('Pieces testees :', `${rows.length} (dont ${invoiceCount} facture${invoiceCount > 1 ? 's' : ''} et ${avoirCount} avoir${avoirCount > 1 ? 's' : ''})`)
-  addStat('Montant total teste (valeur absolue) :', totalTested, { bold: true })
+  addStat('Montant factures testees (HT) :', totalFacturesHt, { bold: true })
+  if (avoirCount > 0) {
+    addStat('Montant avoirs testes (HT) :', totalAvoirsHt)
+  }
+  addStat('Montant net teste (HT) :', totalTestedHt, { bold: true })
   if (caTotal != null && caTotal > 0) {
-    addStat('Chiffre d\'affaires total (FEC) :', caTotal, { bold: true })
-    addStat('Taux de couverture :', `${coveragePct}%`, { bold: true, color: 'FF1E3A5F' })
+    addStat('Chiffre d\'affaires total (HT, FEC) :', caTotal, { bold: true })
+    addStat('Taux de couverture (HT/HT) :', `${coveragePct}%`, { bold: true, color: 'FF1E3A5F' })
   }
 
   statsRow++
@@ -287,13 +294,35 @@ export async function generateReconciliationTableXlsx(
   addStat('Pieces partiellement justifiees :', partialCount, { color: 'FFD97706' })
   addStat('Pieces non justifiees :', missingCount, { color: 'FFDC2626' })
 
-  coverageSheet.getColumn(1).width = 35
+  // Extrapolation section — HT amounts for consistency with CA HT
+  const signalRows = rows.filter((r) => r.nbSignaux > 0)
+  const montantSignauxHt = signalRows.reduce((s, r) => s + getRowHtAmount(r), 0)
+  const tauxErreur = totalTestedHt > 0
+    ? Math.round(montantSignauxHt / totalTestedHt * 10000) / 100
+    : 0
+  const extrapolationMontant = caTotal && caTotal > 0 && totalTestedHt > 0
+    ? Math.round((montantSignauxHt / totalTestedHt) * caTotal)
+    : null
+
+  statsRow++
+  coverageSheet.getCell(`A${statsRow}`).value = 'Extrapolation'
+  coverageSheet.getCell(`A${statsRow}`).font = { bold: true, size: 11, color: { argb: 'FF1E3A5F' } }
+  statsRow++
+
+  addStat('Pieces avec signal(s) documentaire(s) :', signalRows.length)
+  addStat('Montant des pieces avec signal(s) (HT) :', montantSignauxHt, { bold: true })
+  addStat('Taux d\'erreur dans l\'echantillon :', `${tauxErreur}%`, { bold: true, color: tauxErreur > 5 ? 'FFDC2626' : tauxErreur > 0 ? 'FFD97706' : 'FF16A34A' })
+  if (extrapolationMontant != null) {
+    addStat('Extrapolation sur le CA total :', extrapolationMontant, { bold: true, color: extrapolationMontant > 0 ? 'FFDC2626' : 'FF16A34A' })
+  }
+
+  coverageSheet.getColumn(1).width = 40
   coverageSheet.getColumn(2).width = 50
 
   // Disclaimer
   statsRow += 2
   coverageSheet.getCell(`A${statsRow}`).value =
-    'Analyse automatique \u2014 a valider par le commissaire aux comptes. Sof\'IA ne se substitue pas au jugement professionnel.'
+    'Projection mathematique a partir de l\'echantillon teste. La qualification (significatif ou non) et la comparaison au seuil de signification relevent du jugement professionnel du commissaire aux comptes.'
   coverageSheet.getCell(`A${statsRow}`).font = { size: 9, italic: true, color: { argb: 'FF94A3B8' } }
 
   // =========================================================================
@@ -326,6 +355,7 @@ function buildReconciliationRows(
     const isAvoir = Boolean(md.is_avoir) || credit > 0
     const factureTrouvee = Boolean(md.facture_trouvee)
     const blTrouve = Boolean(md.bl_trouve)
+    const montantFactureHt = md.montant_facture_ht != null ? Number(md.montant_facture_ht) : null
     const montantFactureTtc = md.montant_facture_ttc != null ? Number(md.montant_facture_ttc) : null
 
     let ecartPct: number | null = null
@@ -343,6 +373,7 @@ function buildReconciliationRows(
       montantAbs,
       isAvoir,
       factureTrouvee,
+      montantFactureHt,
       montantFactureTtc,
       ecartPct,
       blTrouve,
@@ -351,6 +382,21 @@ function buildReconciliationRows(
       nbSignaux: Number(md.nb_signaux) || 0,
     }
   })
+}
+
+/**
+ * Gets the HT amount for a reconciliation row.
+ * Uses montantFactureHt if available (new analyses), otherwise
+ * falls back to TTC / 1.20 for existing data.
+ */
+function getRowHtAmount(row: ReconRow): number {
+  if (row.montantFactureHt != null && row.montantFactureHt > 0) {
+    return row.montantFactureHt
+  }
+  if (row.montantFactureTtc != null && row.montantFactureTtc > 0) {
+    return Math.round(row.montantFactureTtc / 1.20 * 100) / 100
+  }
+  return Math.round(row.montantAbs / 1.20 * 100) / 100
 }
 
 function thinBorder(color: string): Partial<ExcelJS.Borders> {

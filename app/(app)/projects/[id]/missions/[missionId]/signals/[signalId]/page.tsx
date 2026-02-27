@@ -13,6 +13,7 @@ import {
   Loader2,
   AlertCircle,
   ShieldCheck,
+  BookCheck,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import DisclaimerBanner from '@/components/ui/DisclaimerBanner'
@@ -193,6 +194,11 @@ export default function ProjectSignalDetailPage({
       <div className="rounded-2xl border border-border bg-card px-5 py-4">
         <p className="text-sm leading-relaxed text-card-foreground">{signal.description}</p>
       </div>
+
+      {/* Cutoff FEC status indicator */}
+      {signal.rule_triggered?.startsWith('CUT-') && (
+        <CutoffFecStatusBlock rule={signal.rule_triggered} />
+      )}
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
@@ -394,6 +400,43 @@ export default function ProjectSignalDetailPage({
             <ArrowRight className="h-4 w-4" />
           </button>
         ) : <span />}
+      </div>
+    </div>
+  )
+}
+
+const CUTOFF_FEC_STATUS: Record<string, { title: string; detail: string }> = {
+  'CUT-001': {
+    title: 'Facture comptabilisee dans le FEC de l\'exercice clos',
+    detail: 'Cette facture est enregistree dans les ecritures comptables de l\'exercice N (avant la date de cloture). La livraison etant constatee apres la cloture, le commissaire aux comptes doit verifier si le produit doit etre rattache a l\'exercice N ou differe sur l\'exercice N+1.',
+  },
+  'CUT-002': {
+    title: 'Facture comptabilisee dans le FEC de l\'exercice suivant',
+    detail: 'Cette facture est datee apres la cloture de l\'exercice (N+1) mais la livraison a eu lieu avant la cloture (exercice N). Le commissaire aux comptes doit verifier si un produit a recevoir ou une charge constatee d\'avance doit etre enregistre(e) dans l\'exercice N.',
+  },
+  'CUT-004': {
+    title: 'Operation comptabilisee dans le FEC de l\'exercice clos',
+    detail: 'Cette operation est enregistree dans le FEC de l\'exercice clos, mais aucun justificatif de date de livraison n\'est disponible. Sans preuve de la date effective de transfert, le commissaire aux comptes ne peut verifier le rattachement temporel de cette operation.',
+  },
+  'CUT-005': {
+    title: 'Vente initiale comptabilisee dans le FEC de l\'exercice clos',
+    detail: 'La vente d\'origine est comptabilisee dans l\'exercice N (avant cloture). L\'avoir est emis en debut d\'exercice N+1. Le commissaire aux comptes doit verifier si la vente initiale etait bien acquise a la cloture ou si l\'avoir revele un sujet de rattachement temporel.',
+  },
+}
+
+function CutoffFecStatusBlock({ rule }: { rule: string }) {
+  const status = CUTOFF_FEC_STATUS[rule]
+  if (!status) return null
+
+  return (
+    <div className="rounded-2xl border border-amber-500/30 bg-amber-500/5">
+      <div className="flex items-center gap-2 border-b border-amber-500/20 px-5 py-3">
+        <BookCheck className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+        <h2 className="text-sm font-semibold text-amber-700 dark:text-amber-300">Statut dans le FEC</h2>
+      </div>
+      <div className="px-5 py-4">
+        <p className="text-sm font-medium text-amber-700 dark:text-amber-300">{status.title}</p>
+        <p className="mt-1.5 text-sm leading-relaxed text-amber-600/80 dark:text-amber-400/80">{status.detail}</p>
       </div>
     </div>
   )

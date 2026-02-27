@@ -499,10 +499,20 @@ async function generateFileBuffer(
         rapprochements,
         caTotal,
       })
-      const totalTested = ecritures.reduce(
-        (s, e) => s + (Number(e.debit) || 0) + (Number(e.credit) || 0),
-        0
-      )
+      // Use HT amounts for coverage (ca_total is HT from 7xxx accounts)
+      let totalTestedHt = 0
+      for (const rap of rapprochements) {
+        const md = (rap.match_details ?? {}) as Record<string, unknown>
+        const isAvoir = Boolean(md.is_avoir)
+        const htAmount = getDeliverableHtAmount(md)
+        totalTestedHt += isAvoir ? -htAmount : htAmount
+      }
+      const montantSignaux = signals
+        .filter((sig) => sig.human_decision !== 'rejected')
+        .reduce((s, sig) => {
+          const expl = (sig.explicability as unknown as Record<string, unknown>) ?? {}
+          return s + getDeliverableHtAmount(expl)
+        }, 0)
       return {
         definition,
         buffer,
@@ -510,12 +520,13 @@ async function generateFileBuffer(
           type: 'tableau_rapprochement',
           ecritures_count: ecritures.length,
           rapprochements_count: rapprochements.length,
-          montant_total_teste: totalTested,
+          montant_total_teste_ht: totalTestedHt,
           ca_total: caTotal,
           couverture_pct:
             caTotal && caTotal > 0
-              ? Math.round((totalTested / caTotal) * 10000) / 100
+              ? Math.round((totalTestedHt / caTotal) * 10000) / 100
               : null,
+          montant_signaux: montantSignaux,
         },
       }
     }
@@ -523,4 +534,24 @@ async function generateFileBuffer(
     default:
       throw new Error(`Type de livrable inconnu : ${definition.type}`)
   }
+}
+
+/**
+ * Extracts HT amount from match_details or explicability JSONB.
+ * Prefers montant_facture_ht/montant_ht (new analyses), falls back to TTC / 1.20.
+ */
+function getDeliverableHtAmount(md: Record<string, unknown>): number {
+  if (typeof md.montant_facture_ht === 'number' && md.montant_facture_ht > 0) {
+    return md.montant_facture_ht
+  }
+  if (typeof md.montant_ht === 'number' && md.montant_ht > 0) {
+    return md.montant_ht
+  }
+  const ttc = typeof md.montant_facture_ttc === 'number' ? md.montant_facture_ttc : null
+  if (ttc != null && ttc > 0) {
+    return Math.round(ttc / 1.20 * 100) / 100
+  }
+  const fec = typeof md.montant_fec === 'number' ? md.montant_fec : 0
+  if (fec > 0) return Math.round(fec / 1.20 * 100) / 100
+  return 0
 }

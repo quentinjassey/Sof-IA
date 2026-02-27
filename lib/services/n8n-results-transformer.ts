@@ -228,6 +228,10 @@ export function transformN8NResults(results: N8NResults): TransformResult {
       if (item.bl_trouve) sourceDocParts.push(`BL ${item.piece_ref}`)
       sourceDocParts.push(`FEC (piece_ref: ${item.piece_ref})`)
 
+      const montantHt = item.facture?.montant_ht != null
+        ? Math.abs(item.facture.montant_ht)
+        : null
+
       const explicability: Record<string, unknown> = {
         reasoning: signal.message,
         compared_documents: sourceDocParts,
@@ -235,12 +239,14 @@ export function transformN8NResults(results: N8NResults): TransformResult {
         factual_observation: signal.message,
         montant_fec: montantDisplay,
         montant_fec_signe: item.montant_fec,
+        montant_ht: montantHt,
         is_avoir: itemIsAvoir,
         date_ecriture: item.date_ecriture,
       }
 
       if (item.facture) {
         explicability.facture = {
+          montant_ht: montantHt,
           montant_ttc: item.facture.montant_ttc != null ? Math.abs(item.facture.montant_ttc) : null,
           montant_ttc_signe: item.facture.montant_ttc,
           date: item.facture.date_document,
@@ -326,6 +332,7 @@ export function transformN8NResults(results: N8NResults): TransformResult {
         bl_requis: !itemIsAvoir,
         montant_fec: Math.abs(item.montant_fec),
         montant_fec_signe: item.montant_fec,
+        montant_facture_ht: item.facture?.montant_ht != null ? Math.abs(item.facture.montant_ht) : null,
         montant_facture_ttc: item.facture?.montant_ttc != null ? Math.abs(item.facture.montant_ttc) : null,
         date_ecriture: item.date_ecriture,
         date_facture: item.facture?.date_document ?? null,

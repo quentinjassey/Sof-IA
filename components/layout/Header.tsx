@@ -1,10 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Settings, User } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import MissionSelector from './MissionSelector'
+import AppBreadcrumb from './AppBreadcrumb'
 
 interface ProfileData {
   name: string
@@ -34,8 +34,10 @@ export default function Header() {
 
   return (
     <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-card px-6">
-      {/* Mission selector */}
-      <MissionSelector />
+      {/* Breadcrumb navigation */}
+      <Suspense fallback={<div className="h-5" />}>
+        <AppBreadcrumb />
+      </Suspense>
 
       <div className="flex items-center gap-3">
         {profile && (

@@ -151,7 +151,7 @@ export default function ProjectSignalsPage({
               Signaux documentaires détectés
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              {totalSignals} signal{totalSignals !== 1 ? 'x' : ''} identifié{totalSignals !== 1 ? 's' : ''} lors de la pré-analyse
+              {totalSignals} {totalSignals !== 1 ? 'signaux identifiés' : 'signal identifié'} lors de la pré-analyse
             </p>
           </div>
         </div>

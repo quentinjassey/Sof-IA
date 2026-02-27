@@ -1,19 +1,22 @@
 'use client'
 
 import { useState } from 'react'
+import { cn } from '@/lib/utils'
 
 /**
  * Strips common audit/mission keywords and date suffixes from a mission title
  * to extract a probable company name.
  * e.g. "Audit Acme Distribution - Exercice 2025" → "Acme Distribution"
+ * Falls back to the original title if stripping produces an empty string.
  */
 export function extractCompanyFromTitle(title: string): string {
-  return title
+  const cleaned = title
     .replace(/^(audit|mission|sondage\s+ca?|pointage|cut[- ]?off|césure|rapprochement|contrôle|vérification)\s+/gi, '')
     .replace(/\s*[-–—]\s*(exercice|ex\.?|année|period|clôture)?\s*(20\d{2}|19\d{2})[\s,.\-]*/gi, '')
     .replace(/\s+(sas|sarl|sasu|eurl|sci|snc|sa)\s*$/gi, '')
     .replace(/\s*[-–—]\s*(sas|sarl|sasu|eurl|sci|snc|sa)\s*$/gi, '')
     .trim()
+  return cleaned || title.trim()
 }
 
 /** Builds the internal logo proxy URL for a given company name or domain. */
@@ -67,42 +70,53 @@ interface CompanyLogoProps {
  * Logo.dev and Google Favicon), so no external requests are made from the browser.
  * Falls back to a deterministically colored avatar with initials when no logo is found.
  */
-export function CompanyLogo({ name, domain, className = '' }: CompanyLogoProps) {
+export function CompanyLogo({ name, domain, className }: CompanyLogoProps) {
   const [loaded, setLoaded] = useState(false)
   const [failed, setFailed] = useState(false)
 
-  const src = logoUrl(name, domain)
-  const initials = getInitials(name)
-  const color = getColorFromName(name)
+  const displayName = name || '?'
+  const src = logoUrl(displayName, domain)
+  const initials = getInitials(displayName)
+  const color = getColorFromName(displayName)
 
   return (
     <div
-      className={`relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg ${className}`}
+      className={cn(
+        'relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg',
+        className
+      )}
     >
-      {/* Colored initials avatar — always rendered, hides when logo loads */}
-      <div
-        className={[
-          'absolute inset-0 flex items-center justify-center text-[13px] font-semibold transition-opacity duration-200',
-          color.bg,
-          color.text,
-          loaded ? 'opacity-0' : 'opacity-100',
-        ].join(' ')}
-        aria-hidden={loaded}
-      >
-        {initials}
-      </div>
+      {/* Colored initials avatar — always rendered, hidden only when a real logo loads */}
+      {!loaded && (
+        <div
+          className={cn(
+            'absolute inset-0 flex items-center justify-center rounded-[inherit] text-xs font-semibold leading-none',
+            color.bg,
+            color.text,
+          )}
+        >
+          {initials}
+        </div>
+      )}
 
-      {/* Logo fetched via internal API proxy — no direct external calls from browser */}
+      {/* Logo fetched via internal API proxy */}
       {!failed && (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={src}
-          alt={`Logo ${name}`}
-          className={[
-            'relative h-full w-full object-contain p-1.5 transition-opacity duration-200',
+          alt={`Logo ${displayName}`}
+          className={cn(
+            'relative h-full w-full object-contain p-1.5',
             loaded ? 'opacity-100' : 'opacity-0',
-          ].join(' ')}
-          onLoad={() => setLoaded(true)}
+          )}
+          onLoad={(e) => {
+            const img = e.currentTarget
+            if (img.naturalWidth > 16 && img.naturalHeight > 16) {
+              setLoaded(true)
+            } else {
+              setFailed(true)
+            }
+          }}
           onError={() => setFailed(true)}
         />
       )}

@@ -34,8 +34,13 @@ const LOGO_SOURCES: Array<(domain: string) => string | null> = [
     LOGO_DEV_TOKEN
       ? `https://img.logo.dev/${domain}?token=${LOGO_DEV_TOKEN}&size=128&format=png`
       : null,
-  // Google Favicon — always resolves, recognisable icons for major brands
-  (domain) => `https://www.google.com/s2/favicons?domain=${domain}&sz=128`,
+  // Google Favicon — only as secondary fallback when Logo.dev is configured.
+  // Without Logo.dev, skip entirely: Google returns a default globe icon for
+  // non-existent domains, which looks worse than our initials avatar.
+  (domain) =>
+    LOGO_DEV_TOKEN
+      ? `https://www.google.com/s2/favicons?domain=${domain}&sz=128`
+      : null,
 ]
 
 async function fetchLogo(url: string): Promise<Response | null> {
@@ -95,5 +100,8 @@ export async function GET(request: NextRequest) {
   }
 
   // All sources exhausted — component will show the initials avatar
-  return new NextResponse(null, { status: 404 })
+  return new NextResponse(null, {
+    status: 404,
+    headers: { 'Cache-Control': 'no-store' },
+  })
 }

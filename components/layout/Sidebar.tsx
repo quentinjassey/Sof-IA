@@ -14,6 +14,7 @@ import {
   Menu,
   X,
   ChevronRight,
+  LayoutDashboard,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -24,6 +25,11 @@ interface NavItem {
 }
 
 const mainNavItems: NavItem[] = [
+  {
+    label: 'Tableau de bord',
+    href: '/dashboard',
+    icon: <LayoutDashboard className="h-[18px] w-[18px]" />,
+  },
   {
     label: 'Projets',
     href: '/projects',
@@ -100,7 +106,7 @@ export default function Sidebar() {
       : null
 
   function isActive(href: string): boolean {
-    if (href === '/missions' || href === '/projects') {
+    if (href === '/missions' || href === '/projects' || href === '/dashboard') {
       return pathname === href
     }
     return pathname.startsWith(href)
@@ -110,7 +116,7 @@ export default function Sidebar() {
     <>
       {/* Logo */}
       <div className="flex h-14 items-center justify-between border-b border-sidebar-border px-4">
-        <Link href="/projects">
+        <Link href="/dashboard">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/logo/sofia-logo.webp"

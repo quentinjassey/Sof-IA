@@ -163,7 +163,7 @@ export default function SignalsPage({
       <MissionPageHeader
         missionId={missionId}
         title="Signaux documentaires détectés"
-        subtitle={`${totalSignals} signal${totalSignals !== 1 ? 'x' : ''} identifié${totalSignals !== 1 ? 's' : ''} lors de la pré-analyse`}
+        subtitle={`${totalSignals} ${totalSignals !== 1 ? 'signaux identifiés' : 'signal identifié'} lors de la pré-analyse`}
         actions={
           <div className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-amber-500" />

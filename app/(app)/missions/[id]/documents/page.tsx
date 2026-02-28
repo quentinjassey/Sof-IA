@@ -29,7 +29,6 @@ const FecPreviewModal = dynamic(
 import DropZone, { type StagedFile } from '@/components/documents/DropZone'
 import { UploadProgress, type FileProgress } from '@/components/documents/UploadProgress'
 import { DocumentList } from '@/components/documents/DocumentList'
-import { uploadWithProgress } from '@/lib/utils/upload'
 import { cn } from '@/lib/utils'
 
 // --- Types ---
@@ -166,7 +165,7 @@ export default function DocumentsPage({
     fetchData()
   }, [fetchData])
 
-  // --- Upload with real progress ---
+  // --- Upload files one by one for real progress ---
 
   async function handleUpload(stagedFiles: StagedFile[]) {
     if (stagedFiles.length === 0) return
@@ -174,7 +173,6 @@ export default function DocumentsPage({
     setUploading(true)
     setError(null)
 
-    // Initialize file progress
     const initialProgress: FileProgress[] = stagedFiles.map((sf) => ({
       id: sf.id,
       filename: sf.file.name,
@@ -185,52 +183,54 @@ export default function DocumentsPage({
     setFileProgress(initialProgress)
     setOverallProgress(0)
 
-    const formData = new FormData()
-    stagedFiles.forEach((sf) => {
-      formData.append('files', sf.file)
-      formData.append('types', sf.detectedType)
-    })
-
-    // Mark all as uploading
-    setFileProgress((prev) =>
-      prev.map((f) => ({ ...f, status: 'uploading' as const }))
-    )
-
     const controller = new AbortController()
     abortControllerRef.current = controller
+    const total = stagedFiles.length
+    let completed = 0
 
     try {
-      const res = await uploadWithProgress(
-        `/api/missions/${missionId}/documents`,
-        formData,
-        (event) => {
-          setOverallProgress(event.percent)
-          setFileProgress((prev) =>
-            prev.map((f) => ({
-              ...f,
-              progress: event.percent,
-              status: event.percent >= 100 ? 'complete' as const : 'uploading' as const,
-            }))
-          )
-        },
-        controller.signal
-      )
+      for (let i = 0; i < total; i++) {
+        if (controller.signal.aborted) {
+          throw new DOMException('Upload aborted', 'AbortError')
+        }
 
-      if (!res.ok) {
-        const data = await res.json() as { error?: string }
-        throw new Error((data.error as string) || "Erreur lors de l'envoi des documents.")
+        const sf = stagedFiles[i]
+
+        setFileProgress((prev) =>
+          prev.map((f) => f.id === sf.id ? { ...f, status: 'uploading' as const, progress: 50 } : f)
+        )
+
+        const formData = new FormData()
+        formData.append('file', sf.file)
+        formData.append('types', sf.detectedType)
+
+        const res = await fetch(`/api/missions/${missionId}/documents`, {
+          method: 'POST',
+          body: formData,
+          signal: controller.signal,
+        })
+
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({})) as { error?: string }
+          setFileProgress((prev) =>
+            prev.map((f) =>
+              f.id === sf.id
+                ? { ...f, status: 'error' as const, progress: 0, error: (data.error as string) || 'Erreur' }
+                : f
+            )
+          )
+        } else {
+          setFileProgress((prev) =>
+            prev.map((f) => f.id === sf.id ? { ...f, status: 'complete' as const, progress: 100 } : f)
+          )
+        }
+
+        completed++
+        setOverallProgress(Math.round((completed / total) * 100))
       }
 
-      // Mark all as complete
-      setFileProgress((prev) =>
-        prev.map((f) => ({ ...f, progress: 100, status: 'complete' as const }))
-      )
-      setOverallProgress(100)
-
-      // Refresh data
       await fetchData()
 
-      // Clear progress after a short delay
       setTimeout(() => {
         setFileProgress([])
         setOverallProgress(0)

@@ -116,40 +116,37 @@ export default function ProjectLayout({ children }: { children: React.ReactNode 
 
   const handleUploadFiles = useCallback(
     async (files: File[], types: string[], onProgress?: (pct: number) => void) => {
-      const formData = new FormData()
-      files.forEach((file, i) => {
-        formData.append('files', file)
+      let completed = 0
+      const total = files.length
+      const errors: string[] = []
+
+      for (let i = 0; i < total; i++) {
+        const formData = new FormData()
+        formData.append('file', files[i])
         if (types[i]) formData.append('types', types[i])
-      })
 
-      await new Promise<void>((resolve, reject) => {
-        const xhr = new XMLHttpRequest()
-        xhr.open('POST', `/api/projects/${projectId}/documents`)
+        onProgress?.(Math.round((completed / total) * 100))
 
-        xhr.upload.addEventListener('progress', (e) => {
-          if (e.lengthComputable && onProgress) {
-            onProgress(Math.round((e.loaded / e.total) * 100))
+        try {
+          const res = await fetch(`/api/projects/${projectId}/documents`, {
+            method: 'POST',
+            body: formData,
+          })
+          if (!res.ok) {
+            const data = await res.json().catch(() => ({}))
+            errors.push(data.error || `Erreur pour ${files[i].name}`)
           }
-        })
+        } catch {
+          errors.push(`Erreur réseau pour ${files[i].name}`)
+        }
 
-        xhr.addEventListener('load', () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            resolve()
-          } else {
-            try {
-              const data = JSON.parse(xhr.responseText)
-              reject(new Error(data.error || 'Erreur lors de l\'envoi.'))
-            } catch {
-              reject(new Error('Erreur lors de l\'envoi.'))
-            }
-          }
-        })
+        completed++
+        onProgress?.(Math.round((completed / total) * 100))
+      }
 
-        xhr.addEventListener('error', () => reject(new Error('Erreur réseau.')))
-        xhr.addEventListener('abort', () => reject(new Error('Envoi annulé.')))
-
-        xhr.send(formData)
-      })
+      if (errors.length === total) {
+        throw new Error('Aucun document n\'a pu être envoyé.')
+      }
 
       await refreshProject()
     },

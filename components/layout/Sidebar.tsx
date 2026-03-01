@@ -15,6 +15,7 @@ import {
   X,
   ChevronRight,
   LayoutDashboard,
+  BookOpen,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -34,6 +35,11 @@ const mainNavItems: NavItem[] = [
     label: 'Projets',
     href: '/projects',
     icon: <FolderOpen className="h-[18px] w-[18px]" />,
+  },
+  {
+    label: 'Guide',
+    href: '/guide',
+    icon: <BookOpen className="h-[18px] w-[18px]" />,
   },
   {
     label: 'Paramètres',
